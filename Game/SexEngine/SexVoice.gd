@@ -279,6 +279,19 @@ func getDomReaction(_reactionID, _sexEngine, _domInfo, _subInfo):
 					"I think you don't need your <ITEM>. Be a good toy and undress.",
 					"Take your <ITEM> off for me.",
 				])
+		SexReaction.OrderToUndressMe:
+			if(domIsAngry || domIsVeryMean):
+				possible.append_array([
+					"My <ITEM>, get it off me, now !",
+					"Remove my <ITEM>, "+RNG.pick(["slut", "whore", "fucktoy", "bitch"])+".",
+					"How the fuck am I supposed to fuck you properly with that <ITEM> in the way ?",
+				])
+			else:
+				possible.append_array([
+					"Be a good pet and remove my <ITEM>, would you ?",
+					"Give me a hand, that <ITEM> won't take itself off.",
+					"Would you mind helping me get off my <ITEM> ?"
+				])
 		SexReaction.ForceUndress:
 			if(domIsAngry || domIsVeryMean):
 				possible.append_array([

@@ -15,6 +15,7 @@ enum {
 	BeatingUpHard,
 	
 	OrderToUndress,
+	OrderToUndressMe,
 	ForceUndress,
 	
 	WarnAboutToCum,
