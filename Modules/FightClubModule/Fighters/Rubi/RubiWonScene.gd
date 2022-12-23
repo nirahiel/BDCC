@@ -18,6 +18,7 @@ func _run():
 		addButton("Leave him", "Not doing anything would be the biggest punishment to him", "leave_him")
 		addButton("Finger him", "There is nothing more humiliating than having your ass fingered in public", "finger_him")
 		addButtonWithChecks("Rail him", "Use his butt for your pleasure", "rail_him", [], [ButtonChecks.HasReachablePenis])
+		addButtonWithChecks("Ride him", "Use his dick for your pleasure", "ride_him", [], [ButtonChecks.HasReachableVagina])
 		GM.ES.triggerRun("ArenaFighterPCWon", ["rubi"])
 
 	if(state == "leave_him"):
@@ -88,7 +89,35 @@ func _run():
 		# (scene ends)
 
 		addButton("Continue", "Time to leave", "endthescene")
+	if(state == "ride_him"):
+		# (needs pussy)
+		GM.main.playAnimation(StageScene.Duo, "allfours", {npc="rubi", npcHard=true, npcAction="kneel", npcExposedBodyparts=[BodypartSlot.Penis], exposedBodyparts=[BodypartSlot.Vagina], flipPc=true})
 
+		saynn("[say=pc]How can I leave without first using such a slut?[/say]")
+
+		saynn("You crouch before him and swiftly pull his shorts down, exposing his erect feline cock and a clean tight-looking pink pucker. You see excitement in his eyes as he is willingly spreading his legs for you.")
+
+		saynn("[say=pc]Good boy .. though, this time, you'll be the one using your cock[/say]")
+
+		saynn("You expose your {pc.vagina} and slide a couple digits in before turning around and going down on all fours, pressing your crotch against his shaft")
+
+		saynn("[say=pc]Now be a good boy and stick it in ![/say]")
+
+		saynn("[say=rubi]B-but .. I don't ..[/say]")
+
+		saynn("You quickly stop Rubi's protests as you grab his {rubi.cock} and guide it in, grinding in circles before starting to move back and forth.")
+
+		saynn("Quickly, your vagina starts to leak some juices, and the cute femboy moans loudly, clearly this was a first for him")
+
+		saynn("[say=rubi]F-Fuck! T-too much!.. Ah~~..[/say]")
+
+		saynn("After some pleasurable grinding Rubi suddenly starts moaning louder, his dick shooting weak strings of seed inside your folds as he cums. You keep grinding on his timid cock as you reach your own peak, jolts of pleasure traversing your body. The audience cheers loudly, some applaud even. As your orgasm starts to fade, you push him back onto his butt, stand up and grin at the sight of this poor femboy who looks like he doesn't know where he is. You chuckle and leave him be, time to go get your reward.")
+
+		
+
+		# (scene ends)
+
+		addButton("Continue", "Time to leave", "endthescene")
 
 func _react(_action: String, _args):
 	
@@ -96,6 +125,11 @@ func _react(_action: String, _args):
 		getCharacter("rubi").cummedInAnusBy("pc")
 		GM.pc.orgasmFrom("rubi")
 		GM.pc.addSkillExperience(Skill.SexSlave, 30, "rubi_railhim")
+
+	if(_action == "ride_him"):
+		getCharacter("pc").cummedInVaginaBy("rubi")
+		GM.pc.orgasmFrom("rubi")
+		GM.pc.addSkillExperience(Skill.SexSlave, 30, "rubi_ridehim")
 	
 	if(_action == "endthescene"):
 		endScene()
