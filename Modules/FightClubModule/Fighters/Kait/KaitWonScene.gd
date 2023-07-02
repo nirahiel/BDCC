@@ -6,7 +6,7 @@ func _init():
 func _run():
 	if(state == ""):
 		addCharacter("kait")
-		GM.main.playAnimation(StageScene.Duo, "stand", {npc="kait", npcAction="kneel"})
+		playAnimation(StageScene.Duo, "stand", {npc="kait", npcAction="kneel"})
 
 	if(state == ""):
 		saynn("Kait cries out and falls down to her knees, too exhausted to continue fighting. She presses her hands into the ground and pants heavily. As you try to get closer, she recoils back into one of the fences.")
@@ -51,6 +51,7 @@ func _run():
 		addButton("Continue", "Time to leave", "endthescene")
 
 	if(state == "beat_her_up"):
+		
 		saynn("You continue stepping towards her, menacingly. Kait keeps crawling away and eventually traps herself in one of the corners.")
 
 		saynn("[say=pc]You know what I’m wondering about, Kait?[/say]")
@@ -90,6 +91,10 @@ func _run():
 		addButton("Continue", "See what happens next", "continue")
 
 	if(state == "continue"):
+		playAnimation(StageScene.SexStart, "defeated", {
+			pc="pc", npc="kait", 
+		})
+		
 		saynn("As you get close to her and try to attack her, she tries to kick you again. But it seems like the crowd is tired of seeing her do the same thing, as soon as she grabs onto the fence with her paws, many crowd’s hands slip through the holes in the fences and grab her, pinning Kait’s arms to the fence! Her pupils increase in size, she tries to free herself but only gets her legs grabbed and held in place too, leaving her exposed breasts and chest completely open. She looks at you, her eyes show terror, despair.")
 
 		saynn("Of course you're gonna take advantage of that, you prepare a powerful kick and then lunge forward, shoving your leg into the center of Kait’s mass, her torso. When it connects, you hear a sound of cracked ribs and then a loud gasp, your attack knocks all the air out of Kait. As the hands let her go, she slides down to her knees and then collapses onto the ground like a huge sack of meat. She only finds enough strength to curl up and hug herself, sobbing and whining.")
@@ -117,7 +122,11 @@ func _run():
 
 	if(state == "piss_on_her"):
 		# (needs cock or pussy and piss content)
-		GM.main.playAnimation(StageScene.Duo, "stand", {npc="kait", hard=true, npcAction="kneel", exposedBodyparts=[BodypartSlot.Penis, BodypartSlot.Vagina]})
+		playAnimation(StageScene.SexFeetPlay, "pin", {
+			pc="pc", npc="kait", 
+			bodyState={exposedCrotch=true,hard=true,},
+			npcBodyState={},
+		})
 
 		# (if has cock)
 		if(GM.pc.hasPenis()):
@@ -143,16 +152,21 @@ func _run():
 
 
 	if(state == "breed_her"):
+		addCharacter("kait", ["naked"])
 		# (need cock)
-		GM.main.playAnimation(StageScene.Duo, "stand", {npc="kait", hard=true, npcAction="kneel", exposedBodyparts=[BodypartSlot.Penis], npcExposedBodyparts=[BodypartSlot.Vagina]})
-
+		playAnimation(StageScene.SexStanding, "sex", {
+			pc="pc", npc="kait", 
+			bodyState={exposedCrotch=true,hard=true},
+			npcBodyState={exposedCrotch=true},
+		})
+		
 		saynn("You flex your {pc.masc} arms and then expose your {pc.cock}. Kait sees it and shakes her head subtly.")
 
 		saynn("[say=pc]I’m not done with you.[/say]")
 
 		saynn("[say=kait]F-fuck off-f..[/say]")
 
-		saynn("That altitude just won’t do, you grab the girl by the shoulder and forcibly uncurl her, causing her to hiss from the pain. Then you get a hold of her shorts and yank them off, exposing her black panties and causing more discomfort as the cloth brushes against the hurt knee, this girl is just so fragile. Yeah, your cock is getting harder from the excitement. Kait is trying to kick you off but one stomp on her bruised knee and she is back to sobbing and whining.")
+		saynn("That attitude just won’t do, you grab the girl by the shoulder and forcibly uncurl her, causing her to hiss from the pain. Then you get a hold of her shorts and yank them off, exposing her black panties and causing more discomfort as the cloth brushes against the hurt knee, this girl is just so fragile. Yeah, your cock is getting harder from the excitement. Kait is trying to kick you off but one stomp on her bruised knee and she is back to sobbing and whining.")
 
 		saynn("You get a hold of her panties and try to pull them down but she holds onto them like her life depends on it. Fine, you take the other route and yank them up, forcing the cloth to dig into her slit so hard that it makes her cry out from more pain. A few yanks and the cloth starts to break until her panties get torn off completely, exposing her pink pussy that clearly saw some abuse already. Kait rolls around on the floor and swears at you until you suddenly shove what left of her panties into her mouth and forcibly close her jaw.")
 
@@ -172,6 +186,12 @@ func _run():
 		addButton("Pull out", "You changed your mind", "pull_out")
 
 	if(state == "inside"):
+		playAnimation(StageScene.SexStanding, "fast", {
+			pc="pc", npc="kait", 
+			bodyState={exposedCrotch=true,hard=true},
+			npcBodyState={exposedCrotch=true},
+		})
+		
 		# (if not pregnant)
 		if(!getCharacter("kait").isVisiblyPregnant()):
 			saynn("[say=pc]Hope you are ready to be bred, whore.[/say]")
@@ -195,6 +215,12 @@ func _run():
 
 
 	if(state == "pull_out"):
+		playAnimation(StageScene.SexStanding, "tease", {
+			pc="pc", npc="kait", 
+			bodyState={exposedCrotch=true,hard=true},
+			npcBodyState={exposedCrotch=true},
+		})
+		
 		saynn("While you’re choking Kait, her cunt is clenching so hard around your shaft that you feel like you’re about to cum. But you decide not to ruin her womb too and pull your cock out the moment you get over the peak. Your {pc.cock} starts throbbing and a second later a strong string of {pc.cum} emerges from its tip, landing on Kait’s butt. Then another. And another. The poor kitty squirms and shakes as her butt, tail and thighs become all messy, her tired eyes roll up, she looks like she is about to lose consciousness.")
 
 		saynn("You wait until the last string of your {pc.cum} lands on Kait before you finally stop choking her, letting her slowly slide down the fence and spit out her ruined panties as she is coughing for air. Her stretched cunt is pulsating and slowly closes up, the crowd keeps fondling and playing with the kneeling slut, preventing her from flopping onto the ground. The view is nice and messy, just like you wanted.")
@@ -211,6 +237,9 @@ func _run():
 
 
 func _react(_action: String, _args):
+	if(_action == "piss_on_her"):
+		getCharacter("kait").pissedOnBy("pc")
+	
 	if(_action == "inside"):
 		getCharacter("kait").cummedInVaginaBy("pc")
 		GM.pc.orgasmFrom("kait")

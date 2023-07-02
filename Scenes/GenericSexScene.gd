@@ -2,7 +2,6 @@ extends "res://Scenes/SceneBase.gd"
 
 var sexEngine:SexEngine
 var currentCategory = []
-#var whatHappened = "ASD"
 
 func _init():
 	sceneID = "GenericSexScene"
@@ -10,6 +9,7 @@ func _init():
 
 func _initScene(_args = []):
 	sexEngine = SexEngine.new()
+	sexEngine.setInventoryToUse(sceneSavedItemsInv)
 	
 	var tops = _args[0]
 	var bottoms = _args[1]
@@ -26,6 +26,13 @@ func _initScene(_args = []):
 			addCharacter(bottom)
 	
 	sexEngine.initPeople(tops, bottoms)
+	if(_args.size() > 2):
+		var typeargs = {}
+		if(_args.size() > 3):
+			typeargs = _args[3]
+		sexEngine.initSexType(_args[2], typeargs)
+	else:
+		sexEngine.initSexType(SexType.DefaultSex)
 	
 	#sexEngine.initPeople(top, "pc")
 	#sexEngine.initPeople(top, "rahi")
@@ -41,7 +48,6 @@ func _initScene(_args = []):
 	#sexEngine.initPeople(top, "pc")
 	#sexEngine.initPeople(top, "rahi")
 	#sexEngine.initPeople("alexrynard", "rahi")
-	sexEngine.generateGoals()
 	
 	sexEngine.start()
 	#addCharacter(top)
@@ -51,8 +57,8 @@ func _initScene(_args = []):
 	
 
 
-func _reactInit():
-	updateDomsAndSubs()
+#func _reactInit():
+#	updateDomsAndSubs()
 
 func _run():
 	if(state == ""):
@@ -68,10 +74,10 @@ func _run():
 				addButton("Back", "Back to the previous menu", "backbutton")
 			
 			for domID in sexEngine.getDomIDs():
-				var domInfo: SexDomInfo = sexEngine.getDomInfo(domID)
+				var domInfo = sexEngine.getDomInfo(domID)
 				sayn(domInfo.getInfoString())
 			for subID in sexEngine.getSubIDs():
-				var subInfo: SexSubInfo = sexEngine.getSubInfo(subID)
+				var subInfo = sexEngine.getSubInfo(subID)
 				sayn(subInfo.getInfoString())
 
 			for actionInfo in sexEngine.getActions():
@@ -111,6 +117,7 @@ func _react(_action: String, _args):
 			turns -= 1
 			sexEngine.doAction(sexEngine.getActions()[0])
 			processTime(60)
+			updateDomsAndSubs()
 		sexEngine.endSex()
 		return
 	
@@ -118,7 +125,7 @@ func _react(_action: String, _args):
 		currentCategory = []
 		sexEngine.doAction(_args[0])
 		processTime(60)
-		updateDomsAndSubs()
+		#updateDomsAndSubs()
 		setState("")
 		return
 	
@@ -178,6 +185,20 @@ func supportsSexEngine():
 func _onSceneEnd():
 	sexEngine.endSex()
 
+func getDebugActions():
+	return [
+		{
+			"id": "forceEnd",
+			"name": "Force end sex",
+			"args": [
+			],
+		},
+	]
+
+func doDebugAction(_id, _args = {}):
+	if(_id == "forceEnd"):
+		sexEngine.endSex()
+
 func saveData():
 	var data = .saveData()
 	
@@ -190,5 +211,6 @@ func loadData(data):
 	.loadData(data)
 	
 	sexEngine = SexEngine.new()
+	sexEngine.setInventoryToUse(sceneSavedItemsInv)
 	currentCategory = SAVE.loadVar(data, "currentCategory", [])
 	sexEngine.loadData(SAVE.loadVar(data, "sexEngine", {}))

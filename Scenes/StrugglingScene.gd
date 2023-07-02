@@ -10,6 +10,7 @@ var keyGameValue: int = 50
 var keyText = ""
 var fightMode = false
 var restraintID = ""
+var shouldPlayAnimations = true
 
 #var minigameScene = preload("res://Game/Minigames/Struggling/StrugglingGame.tscn")
 var minigameScene = preload("res://Game/Minigames/ClickAtTheRightTime/ClickAtTheRightTime.tscn")
@@ -20,6 +21,8 @@ func _init():
 func _initScene(_args = []):
 	if(_args.size() > 0):
 		fightMode = _args[0]
+	if(_args.size() > 1):
+		shouldPlayAnimations = _args[1]
 	
 	var allItems = GM.pc.getInventory().getAllEquippedItems()
 	for itemSlot in allItems:
@@ -29,6 +32,9 @@ func _initScene(_args = []):
 
 func _run():
 	if(state == ""):
+		if(shouldPlayAnimations):
+			playAnimation(StageScene.Solo, "stand")
+		
 		var isBlind = GM.pc.isBlindfolded()
 		saynn("Pick the restraint you wanna focus on. Keep in mind that some restraints will be harder to remove depending on what you have on. Crying from pain or moaning loudly from an orgasm will probably attract someone")
 		
@@ -36,7 +42,7 @@ func _run():
 			addButtonAt(13, "Use key", "Use one of your restraint keys to unlock something", "usekey")
 		else:
 			addDisabledButtonAt(13, "Use key", "You don't have any restraint keys")
-		addButtonAt(14, "Give up", "Stop struggling", "endthescene")
+		addButtonAt(14, "Give up", "Stop struggling", "endthescenedidnothing")
 		
 		for item in GM.pc.getInventory().getEquppedRestraints():
 			var restraintData: RestraintData = item.getRestraintData()
@@ -92,10 +98,21 @@ func _run():
 		var item = GM.pc.getInventory().getItemByUniqueID(restraintID)
 		var restraintData: RestraintData = item.getRestraintData()
 		
+		if(shouldPlayAnimations):
+			var animToPlay = restraintData.getResistAnimation()
+			if(animToPlay != null && animToPlay != ""):
+				playAnimation(StageScene.Solo, animToPlay)
+		
 		var game = minigameScene.instance()
 		GM.ui.addCustomControl("minigame", game)
 		game.setDifficulty(restraintData.getLevel())
 		game.connect("minigameCompleted", self, "onMinigameCompleted")
+		if(GM.pc.hasPerk(Perk.BDSMInstantEscape) && game.has_method("instantEscapePerk")):
+			game.instantEscapePerk()
+		if(GM.pc.isBlindfolded() && game.has_method("setIsBlindfolded")):
+			game.setIsBlindfolded(true)
+		if(GM.pc.hasPerk(Perk.BDSMPerfectStreak) && game.has_method("setHasAdvancedPerk")):
+			game.setHasAdvancedPerk(true)
 		
 		addButton("Give up", "Give up the struggle and lose 10 stamina", "giveupstruggle")
 
@@ -152,6 +169,10 @@ func _react(_action: String, _args):
 		endScene()
 		return
 		
+	if(_action == "endthescenedidnothing"):
+		endScene([false])
+		return
+		
 	if(_action == "giveupstruggle"):
 		GM.pc.addStamina(-10)
 		restraintID = ""
@@ -171,8 +192,16 @@ func _react(_action: String, _args):
 		var item = GM.pc.getInventory().getItemByUniqueID(_args[0])
 		var restraintData: RestraintData = item.getRestraintData()
 		var minigameStatus = 1.0
+		var finalMinigameStatus = 1.0
+		
+		var instantUnlock = false
 		if(_args.size() > 1):
-			var minigameResult = clamp(float(_args[1]), 0.0, 1.0)
+			finalMinigameStatus = float(_args[1])
+			
+			if(float(_args[1]) >= 100.0):
+				instantUnlock = true
+				finalMinigameStatus = 1.0
+			var minigameResult = float(_args[1])
 			minigameStatus = pow(minigameResult, 1.5) * 2.0
 			if(minigameResult >= 1.0 && GM.pc.hasPerk(Perk.BDSMBetterStruggling)):
 				minigameStatus *= 2.0
@@ -185,6 +214,8 @@ func _react(_action: String, _args):
 		var struggleData = restraintData.doStruggle(GM.pc, minigameStatus)
 		if(struggleData.has("damage")):
 			damage = struggleData["damage"] * minigameStatus
+			if(damage > 0.0 && instantUnlock):
+				damage = 1.0
 		if(struggleData.has("lust") && struggleData["lust"] > 0):
 			addLust = struggleData["lust"]
 		if(struggleData.has("pain") && struggleData["pain"] > 0):
@@ -212,7 +243,7 @@ func _react(_action: String, _args):
 			
 		if(damage != 0.0):
 			restraintData.takeDamage(damage)
-			addMessage("You made "+str(Util.roundF(damage*100.0, 1))+"% of progress")
+			addMessage("You made "+str(Util.roundF(damage*100.0, 1))+"% of progress ("+str(Util.roundF(finalMinigameStatus*100.0, 1))+"% efficiency)")
 		if(addLust != 0):
 			addLust = GM.pc.receiveDamage(DamageType.Lust, addLust)
 			addMessage("You received "+str(addLust)+" lust")
@@ -350,6 +381,7 @@ func saveData():
 	data["keyText"] = keyText
 	data["fightMode"] = fightMode
 	data["restraintID"] = restraintID
+	data["shouldPlayAnimations"] = shouldPlayAnimations
 	
 	return data
 	
@@ -367,3 +399,4 @@ func loadData(data):
 	keyText = SAVE.loadVar(data, "keyText", "")
 	fightMode = SAVE.loadVar(data, "fightMode", false)
 	restraintID = SAVE.loadVar(data, "restraintID", "")
+	shouldPlayAnimations = SAVE.loadVar(data, "shouldPlayAnimations", true)

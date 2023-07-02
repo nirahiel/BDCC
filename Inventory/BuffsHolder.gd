@@ -19,9 +19,12 @@ var exposure = 0
 var genitalElasticity = 0.0
 var genitalResistance = 0.0
 var orificeMinLooseness = {}
+var orificesPreventedFromRecovering = {}
 var blockedOrifices = {}
 var extraFertility = 0.0
 var extraVirility = 0.0
+var eggsBonusMod: float = 0.0
+var minEggsAmount: int = 0
 var extraCrossSpeciesCompatibility = 0.0
 var skillsExperience = {}
 var customAttributes = {}
@@ -31,6 +34,9 @@ func _ready():
 
 func setCharacter(newnpc):
 	npc = newnpc
+
+func getCharacter():
+	return npc
 
 func calculateBuffs():
 	assert(npc != null)
@@ -73,9 +79,12 @@ func calculateBuffs():
 	genitalResistance = 0.0
 	extraFertility = 0.0
 	extraVirility = 0.0
+	eggsBonusMod = 0.0
+	minEggsAmount = 0
 	extraCrossSpeciesCompatibility = 0.0
 	skillsExperience.clear()
 	customAttributes.clear()
+	orificesPreventedFromRecovering.clear()
 	
 	for damageType in DamageType.getAll():
 		dealDamageMult[damageType] = 0.0
@@ -170,6 +179,12 @@ func getOrificeMinLooseness(orificeType):
 	
 	return orificeMinLooseness[orificeType]
 
+func getOrificePreventedFromRecovering(orificeType):
+	if(orificesPreventedFromRecovering.has(orificeType)):
+		return true
+	
+	return false
+
 func getOrificeBlocked(orificeType):
 	if(!blockedOrifices.has(orificeType)):
 		return false
@@ -181,7 +196,13 @@ func getFertility():
 
 func getVirility():
 	return extraVirility
-
+	
+func getEggsBonusMod():
+	return eggsBonusMod
+	
+func getMinEggsAmount():
+	return minEggsAmount
+	
 func getCrossSpeciesCompatibility():
 	return extraCrossSpeciesCompatibility
 

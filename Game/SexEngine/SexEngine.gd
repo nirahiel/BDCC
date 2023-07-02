@@ -8,10 +8,33 @@ var messages:Array = []
 var doms = {}
 var subs = {}
 var trackedItems = {}
+var inventoryToSaveItemsTo:LightInventory = null
 
 var currentLastActivityID = 0
 
 var sexEnded = false
+
+var sexType:SexTypeBase
+
+func initSexType(theSexType, args = {}):
+	if(theSexType is String):
+		theSexType = GlobalRegistry.createSexType(theSexType)
+	if(theSexType == null):
+		sexType = GlobalRegistry.createSexType(SexType.DefaultSex)
+	else:
+		sexType = theSexType
+		
+	if(sexType != null):
+		sexType.setSexEngine(self)
+		sexType.initArgs(args)
+
+func getSexTypeID():
+	if(sexType == null):
+		return SexType.DefaultSex
+	return sexType.id
+
+func getSexType():
+	return sexType
 
 func initPeople(domIDs, subIDs):
 	if(domIDs is String):
@@ -237,28 +260,50 @@ func generateGoals():
 		var personDomInfo = doms[domID]
 		var possibleGoals = []
 		
+		var breedingGoalsAmount = 0
+		var breedingGoals = []
+		
 		var dom = personDomInfo.getChar()
 		
 		for subID in subs:
 			var personSubInfo = subs[subID]
 			var sub = personSubInfo.getChar()
+			if(sub.hasPerk(Perk.FertilitySubmissiveAndBreedable)):
+				breedingGoalsAmount += 1
 			
 			var goalsToAdd = dom.getFetishHolder().getGoals(self, sub)
 			if(goalsToAdd != null):
 				for goal in goalsToAdd:
+					if(subID == "pc"):
+						if(GM.main.getEncounterSettings().isGoalDisabledForSubPC(goal[0])):
+							continue
+					
+					if(!checkIfThereAreAnyActivitiesThatSupportGoal(goal[0])):
+						continue
+
 					var sexGoal:SexGoalBase = GlobalRegistry.getSexGoal(goal[0])
 					var goalData = sexGoal.generateData(self, personDomInfo, personSubInfo)
 					
 					if(sexGoal.isPossible(self, personDomInfo, personSubInfo, goalData) && !sexGoal.isCompleted(self, personDomInfo, personSubInfo, goalData)):
-						possibleGoals.append([[goal[0], sub.getID(), goalData], goal[1]])
-		
+						var goalObject = [[goal[0], sub.getID(), goalData], goal[1]]
+						
+						possibleGoals.append(goalObject)
+						
+						if(sexGoal.canLeadToSubsPregnancy(self, personDomInfo, personSubInfo, goalData)):
+							breedingGoals.append(goalObject)
+							
 		if(possibleGoals.size() > 0):
 			for _i in range(0, amountToGenerate):
 				var randomGoalInfo = RNG.pickWeightedPairs(possibleGoals)
 				personDomInfo.goals.append(randomGoalInfo.duplicate(true))
 				generatedAnyGoals = true
+				
+		if(breedingGoalsAmount > 0 && breedingGoals.size() > 0):
+			for _i in range(0, breedingGoalsAmount):
+				var randomGoalInfo = RNG.pickWeightedPairs(breedingGoals)
+				personDomInfo.goals.append(randomGoalInfo.duplicate(true))
 			
-		print(personDomInfo.goals)
+		print("Goals added to NPC: ", personDomInfo.goals)
 	
 	if(!isDom("pc") && !generatedAnyGoals):
 		messages.append("Dom couldn't decide what to do with the sub, none of their fetishes apply.")
@@ -266,16 +311,58 @@ func generateGoals():
 		messages.append("[say="+str(RNG.pick(doms))+"]You are a lucky slut.[/say]")
 		
 	#domInfo.goals.append([SexGoal.Fuck, subID])
+
+func checkIfThereAreAnyActivitiesThatSupportGoal(goalID):
+	var allactivities = GlobalRegistry.getSexActivityReferences()
 	
-	#startActivity("SexFuckTest", domID, subID)
-	#startActivity("SexFuckTest2", domID, subID)
-	#startActivity("SexFuckExample", domID, subID)
+	for activityID in allactivities:
+		var activity = allactivities[activityID]
+		
+		var activityGoals = activity.getGoals()
+		var supportedSexTypes = activity.getSupportedSexTypes()
+		if(activityGoals.has(goalID) && activityGoals[goalID] > 0.0):
+			if(areSexTypesSupported(supportedSexTypes)):
+				return true
+	return false
+
+func areSexTypesSupported(supportedSexTypes):
+	var sexTypesSupported = sexType.getSupportedSexActivities()
+	for sexTypeSupported in sexTypesSupported:
+		if(supportedSexTypes.has(sexTypeSupported) && supportedSexTypes[sexTypeSupported]):
+			return true
+	return false
+
+func areSexTypesSupportedForActivity(activity):
+	var supportedSexTypes = activity.getSupportedSexTypes()
+	return areSexTypesSupported(supportedSexTypes)
 
 func hasGoal(thedominfo, goal, thesubinfo):
 	for goalInfo in thedominfo.goals:
-		if(goalInfo[0] == goal && goalInfo[1] == thesubinfo.charID):
-			return true
+		if(goalInfo[1] == thesubinfo.charID):
+			if(goalInfo[0] == goal):
+				return true
+			
+			var goalObject = GlobalRegistry.getSexGoal(goalInfo[0])
+			if(goalObject != null):
+				var subgoals = goalObject.getSubGoals(self, thedominfo, thesubinfo, goalInfo[2])
+				if(subgoals != null && subgoals.has(goal)):
+					return true
+			
 	return false
+
+func hasGoalScore(thedominfo, goal, thesubinfo):
+	for goalInfo in thedominfo.goals:
+		if(goalInfo[1] == thesubinfo.charID):
+			if(goalInfo[0] == goal):
+				return 1.0
+			
+			var goalObject = GlobalRegistry.getSexGoal(goalInfo[0])
+			if(goalObject != null):
+				var subgoals = goalObject.getSubGoals(self, thedominfo, thesubinfo, goalInfo[2])
+				if(subgoals != null && subgoals.has(goal)):
+					return float(subgoals[goal])
+			
+	return 0.0
 
 func satisfyGoal(thedominfo, goalid, thesubinfo):
 	for _i in range(0, thedominfo.goals.size()):
@@ -435,8 +522,13 @@ func processAIActions(isDom = true):
 			var allSexActivities = GlobalRegistry.getSexActivityReferences()
 			for possibleSexActivityID in allSexActivities:
 				var newSexActivityRef = allSexActivities[possibleSexActivityID]
+				newSexActivityRef.sexEngineRef = weakref(self)
+				
+				if(!areSexTypesSupportedForActivity(newSexActivityRef)):
+					continue
 				
 				for subID in subs:
+					newSexActivityRef.initParticipants(personID, subID)
 					var subInfo = subs[subID]
 					if(!newSexActivityRef.canBeStartedByDom()):
 						continue
@@ -460,14 +552,21 @@ func processAIActions(isDom = true):
 								priority = getSafeValueFromDict(newaction, "priority", 0),
 							})
 							actionsScores.append(score)
+				newSexActivityRef.clearSexEngineRefAndParticipants()
 		
 		if(isSub(personID)):
 			var allSexActivities = GlobalRegistry.getSexActivityReferences()
 			for possibleSexActivityID in allSexActivities:
 				var newSexActivityRef = allSexActivities[possibleSexActivityID]
+				newSexActivityRef.sexEngineRef = weakref(self)
+				
+				if(!areSexTypesSupportedForActivity(newSexActivityRef)):
+					continue
 				
 				for domID in doms:
+					newSexActivityRef.initParticipants(domID, personID)
 					var domInfo = doms[domID]
+					
 					if(!newSexActivityRef.canBeStartedBySub()):
 						continue
 					
@@ -490,7 +589,7 @@ func processAIActions(isDom = true):
 								priority = getSafeValueFromDict(newaction, "priority", 0),
 							})
 							actionsScores.append(score)
-		
+				newSexActivityRef.clearSexEngineRefAndParticipants()
 		
 		for activity in activities:
 			if(activity.hasEnded):
@@ -590,6 +689,11 @@ func doSubAction(activity, action):
 	sendProcessedData(actionResult)
 
 func start():
+	if(sexType == null):
+		initSexType(SexType.DefaultSex)
+	
+	generateGoals()
+	
 	if(!isDom("pc")):
 		processAIActions(true)
 		processAIActions(false)
@@ -625,6 +729,7 @@ func getActions():
 						action = action,
 						name = action["name"],
 						desc = action["desc"],
+						category = getSafeValueFromDict(action, "category", []),
 						chance = getSafeValueFromDict(action, "chance"),
 						priority = getSafeValueFromDict(action, "priority", 0),
 					})
@@ -638,6 +743,7 @@ func getActions():
 						action = action,
 						name = action["name"],
 						desc = action["desc"],
+						category = getSafeValueFromDict(action, "category", []),
 						chance = getSafeValueFromDict(action, "chance"),
 						priority = getSafeValueFromDict(action, "priority", 0),
 					})
@@ -648,6 +754,11 @@ func getActions():
 			var allSexActivities = GlobalRegistry.getSexActivityReferences()
 			for possibleSexActivityID in allSexActivities:
 				var newSexActivityRef = allSexActivities[possibleSexActivityID]
+				newSexActivityRef.sexEngineRef = weakref(self)
+				newSexActivityRef.initParticipants("pc", pctargetID)
+				
+				if(!areSexTypesSupportedForActivity(newSexActivityRef)):
+					continue
 				
 				if(!newSexActivityRef.canBeStartedByDom()):
 					continue
@@ -671,6 +782,7 @@ func getActions():
 						desc = getSafeValueFromDict(newaction, "desc", "Start new activity"),
 						priority = getSafeValueFromDict(newaction, "priority", 0),
 					})
+				newSexActivityRef.clearSexEngineRefAndParticipants()
 					
 	if(isSub("pc") && getSubInfo("pc").canDoActions()):
 		var pctargetID = getPCTarget()
@@ -678,6 +790,11 @@ func getActions():
 			var allSexActivities = GlobalRegistry.getSexActivityReferences()
 			for possibleSexActivityID in allSexActivities:
 				var newSexActivityRef = allSexActivities[possibleSexActivityID]
+				newSexActivityRef.sexEngineRef = weakref(self)
+				newSexActivityRef.initParticipants(pctargetID, "pc")
+				
+				if(!areSexTypesSupportedForActivity(newSexActivityRef)):
+					continue
 				
 				if(!newSexActivityRef.canBeStartedBySub()):
 					continue
@@ -701,7 +818,8 @@ func getActions():
 						desc = getSafeValueFromDict(newaction, "desc", "Start new activity"),
 						priority = getSafeValueFromDict(newaction, "priority", 0),
 					})
-	
+				newSexActivityRef.clearSexEngineRefAndParticipants()
+				
 	var importantActions = []
 	for actionInfo in result:
 		if(actionInfo.has("priority") && actionInfo["priority"] >= 1000):
@@ -823,26 +941,6 @@ func endSex():
 	sexEnded = true
 	var texts = ["The sex scene has ended!"]
 	
-	for domID in doms:
-		var domInfo = doms[domID]
-		
-		domInfo.getChar().afterSexEnded(domInfo)
-		
-		var sexEndInfo = domInfo.getSexEndInfo()
-		if(sexEndInfo.size() > 0):
-			texts.append(domInfo.getChar().getName()+":")
-			texts.append(Util.join(sexEndInfo, "\n"))
-
-	for subID in subs:
-		var subInfo = subs[subID]
-		
-		subInfo.getChar().afterSexEnded(subInfo)
-
-		var sexEndInfo = subInfo.getSexEndInfo()
-		if(sexEndInfo.size() > 0):
-			texts.append(subInfo.getChar().getName()+":")
-			texts.append(Util.join(sexEndInfo, "\n"))
-
 	if(trackedItems.has("pc")):
 		for trackedItem in trackedItems["pc"]:
 			var character:BaseCharacter = GlobalRegistry.getCharacter(trackedItem[0])
@@ -858,6 +956,42 @@ func endSex():
 			GM.pc.getInventory().addItem(item)
 			GM.main.addMessage("You recovered "+item.getAStackName())
 	trackedItems.erase("pc")
+	
+	for domID in doms:
+		var domInfo = doms[domID]
+		
+		# Lets us loot used condoms
+		var theCondom = domInfo.getChar().getWornCondom()
+		if(theCondom != null):
+			if(theCondom.getFluids() != null):
+				if(!theCondom.getFluids().isEmpty()):
+					theCondom.destroyMe()
+					saveCondomToLootIfPerk(theCondom)
+			
+		domInfo.getChar().afterSexEnded(domInfo)
+		
+		var sexEndInfo = domInfo.getSexEndInfo()
+		if(sexEndInfo.size() > 0):
+			texts.append(domInfo.getChar().getName()+":")
+			texts.append(Util.join(sexEndInfo, "\n"))
+
+	for subID in subs:
+		var subInfo = subs[subID]
+		
+		# Lets us loot used condoms
+		var theCondom = subInfo.getChar().getWornCondom()
+		if(theCondom != null):
+			if(theCondom.getFluids() != null):
+				if(!theCondom.getFluids().isEmpty()):
+					theCondom.destroyMe()
+					saveItemToLoot(theCondom)
+		
+		subInfo.getChar().afterSexEnded(subInfo)
+
+		var sexEndInfo = subInfo.getSexEndInfo()
+		if(sexEndInfo.size() > 0):
+			texts.append(subInfo.getChar().getName()+":")
+			texts.append(Util.join(sexEndInfo, "\n"))
 
 	messages.append(Util.join(texts, "\n"))
 
@@ -882,11 +1016,7 @@ func getBestAnimation():
 		else:
 			return animInfo
 	
-	#return null
-	if(subs.size() == 0 || doms.size() == 0):
-		return null
-	
-	return [StageScene.Duo, "stand", {pc=subs.keys()[0], npc=doms.keys()[0]}]
+	return sexType.getDefaultAnimation()
 
 func playAnimation():
 	var animInfo = getBestAnimation()
@@ -903,12 +1033,16 @@ func getStartActivityScore(activityID, domInfo, subInfo):
 	var newSexActivityRef = GlobalRegistry.getSexActivityReference(activityID)
 	if(newSexActivityRef == null):
 		return -1.0
+	newSexActivityRef.sexEngineRef = weakref(self)
+	newSexActivityRef.initParticipants(domInfo.charID, subInfo.charID)
 	
 	if(!newSexActivityRef.canStartActivity(self, domInfo, subInfo)):
+		newSexActivityRef.clearSexEngineRefAndParticipants()
 		return -1.0
 	
 	var newpossibleActions = newSexActivityRef.getStartActions(self, domInfo, subInfo)
 	if(newpossibleActions == null):
+		newSexActivityRef.clearSexEngineRefAndParticipants()
 		return -1.0
 	
 	var maxScore = 0.0
@@ -917,6 +1051,7 @@ func getStartActivityScore(activityID, domInfo, subInfo):
 		
 		maxScore = max(maxScore, score)
 	
+	newSexActivityRef.clearSexEngineRefAndParticipants()
 	return maxScore
 
 func addTrackedGear(ownerID, whoWearsItID, itemUniqueID):
@@ -924,6 +1059,15 @@ func addTrackedGear(ownerID, whoWearsItID, itemUniqueID):
 		trackedItems[ownerID] = []
 	
 	trackedItems[ownerID].append([whoWearsItID, itemUniqueID])
+
+func checkGearIsFromPC(whoWearsItID, itemUniqueID):
+	if(!trackedItems.has("pc")):
+		return false
+	
+	for trackedData in trackedItems["pc"]:
+		if(trackedData[0] == whoWearsItID && trackedData[1] == itemUniqueID):
+			return true
+	return false
 
 func getCurrentActivitiesMaxSubOrgasmHandlePriority(domID, subID):
 	var maxResult = -1
@@ -943,17 +1087,16 @@ func getCurrentActivitiesMaxDomOrgasmHandlePriority(domID, subID):
 				maxResult = thePriority
 	return maxResult
 
-#var activities:Array = []
-#var revealedBodyparts: Dictionary = {}
-#var messages:Array = []
-#
-#var doms = {}
-#var subs = {}
-#var trackedItems = {}
-#
-#var currentLastActivityID = 0
-#
-#var sexEnded = false
+func setInventoryToUse(newInv):
+	inventoryToSaveItemsTo = newInv
+
+func saveCondomToLootIfPerk(theItem):
+	if(GM.pc.hasPerk(Perk.CumKeepCondoms)):
+		saveItemToLoot(theItem)
+
+func saveItemToLoot(theItem):
+	if(inventoryToSaveItemsTo != null):
+		inventoryToSaveItemsTo.addItem(theItem)
 
 func saveData():
 	var data = {
@@ -963,6 +1106,9 @@ func saveData():
 		"currentLastActivityID": currentLastActivityID,
 		"sexEnded": sexEnded,
 	}
+	if(sexType != null):
+		data["sexTypeID"] = sexType.id
+		data["sexTypeData"] = sexType.saveData()
 	
 	var domsData = {}
 	for domID in doms:
@@ -990,6 +1136,14 @@ func loadData(data):
 	trackedItems = SAVE.loadVar(data, "trackedItems", {})
 	currentLastActivityID = SAVE.loadVar(data, "currentLastActivityID", 0)
 	sexEnded = SAVE.loadVar(data, "sexEnded", false)
+	
+	var sexTypeID = SAVE.loadVar(data, "sexTypeID", SexType.DefaultSex)
+	var theSexType = GlobalRegistry.createSexType(sexTypeID)
+	if(theSexType == null):
+		theSexType = GlobalRegistry.createSexType(SexType.DefaultSex)
+	sexType = theSexType
+	sexType.setSexEngine(self)
+	sexType.loadData(SAVE.loadVar(data, "sexTypeData", {}))
 	
 	doms.clear()
 	subs.clear()

@@ -7,6 +7,13 @@ func getGoals():
 	return {
 	}
 
+func getSupportedSexTypes():
+	return {
+		SexType.DefaultSex: true,
+		SexType.StocksSex: true,
+		SexType.SlutwallSex: true,
+	}
+
 func getActivityBaseScore(_sexEngine: SexEngine, _domInfo: SexDomInfo, _subInfo: SexSubInfo):
 	if(_subInfo.isUnconscious()):
 		return -1.0
@@ -51,6 +58,15 @@ func processTurn():
 			"{dom.You} {dom.youVerb('scratch', 'scratches')} {sub.yourHis} back.",
 			"{dom.You} {dom.youVerb('pull')} on {sub.yourHis} hair.",
 		]
+		if(getSexType() == SexType.SlutwallSex):
+			texts = [
+				"{dom.You} {dom.youVerb('punch', 'punches')} {sub.youHim}.",
+				"{dom.You} {dom.youVerb('punch', 'punches')} {sub.youHim} violently.",
+				"{dom.You} {dom.youVerb('squeeze', 'squeezes')} {sub.yourHis} ass painfully.",
+				"{dom.You} {dom.youVerb('scratch', 'scratches')} {sub.youHim}.",
+				"{dom.You} {dom.youVerb('scratch', 'scratches')} {sub.youHim} helpless.",
+				"{dom.You} {dom.youVerb('scratch', 'scratches')} {sub.yourHis} thighs.",
+			]
 		
 		var text = []
 		var amount = RNG.randi_range(1, Util.mini(3, texts.size()))
@@ -99,6 +115,9 @@ func doDomAction(_id, _actionInfo):
 			"{dom.You} {dom.youVerb('slam')} {sub.youHim} against the wall [b]really hard[/b].",
 			"{dom.You} {dom.youVerb('punch', 'punches')} {sub.youHim} [b]really hard[/b].",
 		])
+		
+		if(RNG.chance(50)):
+			getSub().doWound(domID)
 		
 		return {
 			text = text,

@@ -2,12 +2,17 @@ extends Spatial
 class_name BaseStageScene3D
 
 var id = "error"
+var currentAnim = ""
 
 func _init():
 	id = "error"
 
 func _ready():
 	pass
+
+func playAnimationFinal(animID, _args = {}):
+	playAnimation(animID, _args)
+	currentAnim = animID
 
 func playAnimation(animID, _args = {}):
 	print("Playing: "+str(animID))
@@ -66,6 +71,32 @@ func stateMachineTravel(thedoll, state_machine, animID):
 		else:
 			thedoll.attachTemporaryUnriggedPart("hand.R", "res://Inventory/UnriggedModels/StunBaton/StunBaton.tscn")
 		thedoll.setTemporaryState("hands", "fists")
+	elif(animID == "throw"):
+		state_machine.travel("WeaponThrow")
+		if(args.size() > 1):
+			thedoll.attachTemporaryUnriggedPart("hand.R", args[1])
+		thedoll.setTemporaryState("hands", "fists")
+	elif(animID == "holdpistol"):
+		state_machine.travel("WeaponGunHold-loop")
+		if(args.size() > 1):
+			thedoll.attachTemporaryUnriggedPart("hand.L", args[1])
+		else:
+			thedoll.attachTemporaryUnriggedPart("hand.L", "res://Inventory/UnriggedModels/EnergyPistol/EnergyPistolBlue.tscn")
+		thedoll.setTemporaryState("hands", "fists")
+	elif(animID == "aimpistol"):
+		state_machine.travel("WeaponGunAim-loop")
+		if(args.size() > 1):
+			thedoll.attachTemporaryUnriggedPart("hand.L", args[1])
+		else:
+			thedoll.attachTemporaryUnriggedPart("hand.L", "res://Inventory/UnriggedModels/EnergyPistol/EnergyPistolBlue.tscn")
+		thedoll.setTemporaryState("hands", "fists")
+	elif(animID == "firepistol"):
+		state_machine.travel("WeaponGunShoot")
+		if(args.size() > 1):
+			thedoll.attachTemporaryUnriggedPart("hand.L", args[1])
+		else:
+			thedoll.attachTemporaryUnriggedPart("hand.L", "res://Inventory/UnriggedModels/EnergyPistol/EnergyPistolBlue.tscn")
+		thedoll.setTemporaryState("hands", "fists")
 	elif(animID == "shiv"):
 		state_machine.travel("WeaponShiv")
 		if(args.size() > 1):
@@ -75,6 +106,47 @@ func stateMachineTravel(thedoll, state_machine, animID):
 		thedoll.setTemporaryState("hands", "fists")
 	elif(animID == "shove"):
 		state_machine.travel("Shove")
+	elif(animID == "struggle"):
+		state_machine.travel("StruggleGeneric-loop")
+	elif(animID == "struggle_gag"):
+		state_machine.travel("StruggleGag-loop")
+	elif(animID == "struggle_legs"):
+		state_machine.travel("StruggleLegs-loop")
 	else:
 		return false
 	return true
+
+
+func stateMachineTravelPuppy(_thedoll, state_machine, animID):
+	#var args = []
+	if(animID is Array):
+		#args = animID
+		animID = animID[0]
+	
+	if(animID == ""):
+		pass
+	elif(animID == "stand"):
+		state_machine.travel("PuppyIdle-loop")
+	elif(animID == "walk"):
+		state_machine.travel("PuppyWalk-loop")
+	elif(animID == "sit"):
+		state_machine.travel("PuppySit-loop")
+	elif(animID == "paw"):
+		state_machine.travel("PuppySitPaw-loop")
+	elif(animID == "back"):
+		state_machine.travel("PuppyOnBack-loop")
+	elif(animID == "sad"):
+		state_machine.travel("PuppyIdleSad-loop")
+	else:
+		return false
+	
+	return true
+
+func getSupportedStates():
+	return []
+
+func getSupportedStatesPuppy():
+	return ["stand", "walk", "sit", "paw", "back", "sad"]
+
+func getSupportedStatesSolo():
+	return ["walk", "stand", "kneel", "defeat", "sit", "bite", "block", "dodge", "hurt", "kick", "punch", "allfours", "crawl", "stunbaton", "throw", "holdpistol", "aimpistol", "firepistol", "shiv", "shove", "struggle", "struggle_gag", "struggle_legs"]

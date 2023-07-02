@@ -17,15 +17,19 @@ func updateSubAnims():
 	
 func playAnimation(animID, _args = {}):
 	print("Playing sybian: "+str(animID))
-	doll.prepareCharacter("pc")
-	
-	if(_args.has("exposedBodyparts")):
-		doll.setExposedBodyparts(_args["exposedBodyparts"])
+	if(_args.has("pc")):
+		doll.prepareCharacter(_args["pc"])
 	else:
-		doll.setExposedBodyparts([])
+		doll.prepareCharacter("pc")
 	
-	if(_args.has("hard") && _args["hard"]):
-		doll.setCockTemporaryHard()
+	if(_args.has("bodyState")):
+		doll.applyBodyState(_args["bodyState"])
+	else:
+		doll.applyBodyState({})
+	
+	if(_args.has("nosybian") && _args["nosybian"]):
+		$Sybian.visible = false
+		$Sprite3D.transform.origin.y = -0.276
 	
 	updateSubAnims()
 	
@@ -36,3 +40,6 @@ func playAnimation(animID, _args = {}):
 		state_machine.travel("Ride")
 	else:
 		Log.printerr("Action "+str(animID)+" is not found for stage "+str(id))
+
+func getSupportedStates():
+	return ["idle", "ride"]

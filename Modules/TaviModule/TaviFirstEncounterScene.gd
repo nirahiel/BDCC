@@ -6,7 +6,7 @@ func _init():
 func _run():
 	if(state == ""):
 		addCharacter("tavi")
-		GM.main.playAnimation(StageScene.Duo, "stand", {npc="tavi"})
+		playAnimation(StageScene.Duo, "stand", {npc="tavi"})
 		
 	if(state == ""):
 		saynn("You were exploring the mineshafts level when your ears suddenly caught an unknown voice somewhere from behind.")
@@ -123,7 +123,7 @@ func _run():
 		addButton("Push away", "What she thinks she is doing", "push_away")
 
 	if(state == "kneel"):
-		GM.main.playAnimation(StageScene.Duo, "kneel", {npc="tavi"})
+		playAnimation(StageScene.Duo, "kneel", {npc="tavi"})
 		
 		saynn("You feel her firm grasp and decide to comply. Without much resistance, you lower yourself and get on your knees before the tall cat. She can’t help but to smile and give you a few headpats.")
 
@@ -160,7 +160,7 @@ func _run():
 		addButton("Push", "Fight the pain and try to overpower her. You will probably have to fight her.", "push")
 
 	if(state == "submit"):
-		GM.main.playAnimation(StageScene.Duo, "kneel", {npc="tavi"})
+		playAnimation(StageScene.Duo, "kneel", {npc="tavi"})
 		
 		saynn("The pain is too much so you decide to comply. You raise your hands up and cease resisting.")
 
@@ -206,7 +206,7 @@ func _run():
 	#	addButton("Lost fight", "", "lost_fight")
 
 	if(state == "lost_fight"):
-		GM.main.playAnimation(StageScene.Duo, "kneel", {npc="tavi"})
+		playAnimation(StageScene.Duo, "kneel", {npc="tavi"})
 		
 		saynn("You can’t fight anymore, the cat was too strong for you. You give up and drop to your knees, all your bruises cause you pain. Tavi is clearly looking very annoyed, you can’t see her smile anymore. She walks up to you and grabs you by the collar with the other hand threatening to strike you.")
 
@@ -228,7 +228,7 @@ func _run():
 		addButton("Continue", "Listen to the rules", "continue")
 
 	if(state == "no1"):
-		GM.main.playAnimation(StageScene.Duo, "defeat", {npc="tavi"})
+		playAnimation(StageScene.Duo, "defeat", {npc="tavi"})
 		
 		saynn("You just spit in her direction. And Tavi clearly didn’t like that answer, she growls as she pushes her leg into your chest and then kicks you away, causing you to hit the floor. That act puts a somewhat satisfied grin on her face.")
 
@@ -241,7 +241,7 @@ func _run():
 		#addButton("Won fight", "", "won_fight")
 
 	if(state == "won_fight"):
-		GM.main.playAnimation(StageScene.Duo, "stand", {npc="tavi", npcAction="kneel"})
+		playAnimation(StageScene.Duo, "stand", {npc="tavi", npcAction="kneel"})
 		
 		saynn("Tavi loses her strength and collapses onto the floor. All her many bruises seem to be glowing green, with the color of her blood.")
 
@@ -259,7 +259,7 @@ func _run():
 		addDisabledButton("Fuck Tavi", "Not done :(")
 
 	if(state == "submit2"):
-		GM.main.playAnimation(StageScene.Duo, "kneel", {npc="tavi"})
+		playAnimation(StageScene.Duo, "kneel", {npc="tavi"})
 		
 		saynn("You crouch before Tavi and help her to get up. You swipe the dirt from her uniform and step away, tilting your head down, looking kinda sad after what you did.")
 
@@ -318,6 +318,11 @@ func _run():
 
 	if(state == "obey"):
 		addCharacter("tavi", ["naked"])
+		playAnimation(StageScene.SexFaceSitting, "sit", {
+			pc="tavi", npc="pc", 
+			bodyState={exposedCrotch=true,},
+			npcBodyState={},
+		})
 		
 		saynn("You do as she says. Your eyes are shut, arms are behind the back. You are kneeling before a tall feline that has a grab on your hair. Suddenly she starts tugging you closer, closer to herself. And you give in, leaning forward for your new Miss, until meeting with her covered crotch. She is still wearing the shorts but you still feel the warmness of her body, get her nice female scent.")
 
@@ -433,10 +438,9 @@ func _react(_action: String, _args):
 	if(_action == "obey"):
 		processTime(30*60)
 		GM.pc.orgasmFrom("tavi")
-		GM.pc.cummedOnBy("tavi", BodilyFluids.FluidSource.Vagina)
-		GM.pc.cummedInMouthBy("tavi", BodilyFluids.FluidSource.Vagina)
+		GM.pc.cummedOnBy("tavi", FluidSource.Vagina)
+		GM.pc.cummedInMouthBy("tavi", FluidSource.Vagina)
 		GM.pc.addSkillExperience(Skill.SexSlave, 50, "tavi_firstencounter")
-		GM.pc.updateNonBattleEffects()
 		addMessage("Tavi came on you, covering your body with her female juices")
 	
 	if(_action == "fight"):
@@ -473,3 +477,9 @@ func _react_scene_end(_tag, _result):
 		else:
 			setState("lost_fight")
 			addExperienceToPlayer(10)
+
+func getDevCommentary():
+	return "A lot of people don't like Tavi (and still don't). Which is fair.. The reason is probably because she is quite obviously.. shady. And tries to dominate you at the first sight. Ehh.. I tried to write her.. intimidating, yes. She does actually need your help but she is not quite sure how to ask for it.\n\nThis is probably one of the first 'lewd' scenes that I wrote for the game. Would I do it differently now? I still can x3. I'm just lazy. But.. I dunno. Tavi is weird by design. She is like.. Joker. Even has his colors x3. I think her current introduction is fine.\n\nWhy did I made it so you must sub to her to get any story? Well, I wanted to complete a route for 'switch' people first. Switches are between doms and bottoms, they can do both, they can 'switch'. I'm a switch so it would be the easiest for me to write. What does that mean for the route? It means that you are Tavi's sidekick and sub to her but also can dominate people around the station (or sub to them too x3). And that 'Tavi's sub' is what irks people. But I can't really see her content working without that.. connection.. between you and her. Hope I make sense. Sorry dom people, I will write a route for you too x3"
+
+func hasDevCommentary():
+	return true

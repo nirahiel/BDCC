@@ -16,15 +16,15 @@ func playAnimation(animID, _args = {}):
 	else:
 		doll.prepareCharacter("pc")
 	
-	if(_args.has("exposedBodyparts")):
-		doll.setExposedBodyparts(_args["exposedBodyparts"])
+	if(_args.has("bodyState")):
+		doll.applyBodyState(_args["bodyState"])
 	else:
-		doll.setExposedBodyparts([])
-	
-	if(_args.has("hard") && _args["hard"]):
-		doll.setCockTemporaryHard()
+		doll.applyBodyState({})
 	
 	if(animID == "idle"):
 		animationPlayer.play("Idle")
 	else:
 		Log.printerr("Action "+str(animID)+" is not found for stage "+str(id))
+
+func getSupportedStates():
+	return ["idle"]

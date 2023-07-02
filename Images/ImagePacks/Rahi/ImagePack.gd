@@ -39,3 +39,14 @@ func _init():
 
 	addCharacter("jacki", [], "res://Images/ImagePacks/Rahi/Characters/jacki/jacki.png")
 	addCharacter("jacki", ["naked"], "res://Images/ImagePacks/Rahi/Characters/jacki/jacki-naked.png")
+
+	addCharacter("kait", [], "res://Images/ImagePacks/Rahi/Characters/kait/kait.png")
+	addCharacter("kait", ["naked"], "res://Images/ImagePacks/Rahi/Characters/kait/kait-naked.png")
+	
+	## Just an example
+	## Uncomment to enable
+	#addSceneImage("InventoryScene", "", "res://Images/ImagePacks/Rahi/Characters/kait/kait.png")
+	#addSceneImage("InventoryScene", "takeoffmenu", "res://Images/ImagePacks/Rahi/Characters/kait/kait-naked.png")
+	
+	## Will only be shown if the player character is male. Can add multiple with different conditions. Has priority over non-conditional images
+	#addSceneImageWithConditions("InventoryScene", "putonmenu", "res://Images/ImagePacks/Rahi/Characters/kait/kait-naked.png", [ImageCon.MalePC])

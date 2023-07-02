@@ -5,7 +5,7 @@ func _init():
 
 func _run():
 	if(state == ""):
-		GM.main.playAnimation(StageScene.Solo, "stand")
+		playAnimation(StageScene.Solo, "stand")
 		GM.pc.setLocation("fight_entrance")
 		aimCameraAndSetLocName("fight_entrance")
 
@@ -19,7 +19,7 @@ func _run():
 		addButton("Continue", "See what happens next", "continue")
 
 	if(state == "continue"):
-		GM.main.playAnimation(StageScene.Solo, "walk")
+		playAnimation(StageScene.Solo, "walk")
 		aimCameraAndSetLocName("fight_nearentrance")
 		addCharacter("announcer")
 		
@@ -38,7 +38,7 @@ func _run():
 		addButton("Watch the fight", "Now this is getting interesting", "watch_the_fight")
 
 	if(state == "watch_the_fight"):
-		GM.main.playAnimation(StageScene.Duo, "stand", {pc = "kait", npc = "avy"})
+		playAnimation(StageScene.Duo, "stand", {pc = "kait", npc = "avy"})
 		# (Avy, dark fox red with a cock)
 
 		# (Kait, Snow leopard lilac girl)
@@ -100,7 +100,13 @@ func _run():
 
 
 	if(state == "stay"):
-		GM.main.playAnimation(StageScene.Duo, "kneel", {pc = "kait", npc = "avy", npcHard=true, exposedBodyparts=[BodypartSlot.Vagina, BodypartSlot.Anus], npcExposedBodyparts=[BodypartSlot.Penis]})
+		addCharacter("kait", ["naked"])
+		playAnimation(StageScene.SexMissionary, "fast", {
+			pc = "avy",
+			npc="kait",
+			bodyState={exposedCrotch=true,hard=true},
+			npcBodyState={exposedCrotch=true,hard=true},
+		})
 		
 		saynn("The naked cat tries to crawl away from the fox but these attempts are quickly ended by Avy grabbing lilac’s legs and then raising and pinning them into the floor using her body, getting the girl into a mating press position. She then quickly directs her veiny cock down the girl’s cunt and thrusts inside, causing her knotted cock to spread the sensitive pink folds and slide inside the pussy balls-deep!")
 
@@ -152,3 +158,9 @@ func _react_scene_end(_tag, _result):
 		else:
 			setState("if_lost")
 			#addExperienceToPlayer(5)
+
+func getDevCommentary():
+	return "I wanted the first time you visit the underground to be special. Kinda like a reward after defeating the bulldog. So I added this scene of fighting between Avy and Kait, they weren't even full characters at that point, just random extras I came up with on the spot..\n\nProbably the first scene with NTR in it? I don't even know, Kait is not a love interest currently as I'm writing this. But she very well might be later. But I was smart enough even back then to add a way to skip the scene ^^. Kait needed to suffer a little to show that she is a strong kitty. Sorry that I made it so she gets fucked, I didn't know she would be a bigger character x3. At least that makes you hate Avy more"
+
+func hasDevCommentary():
+	return true

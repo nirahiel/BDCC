@@ -5,11 +5,15 @@ enum {
 	Illegal,
 	BDSMRestraint,
 	CanBeForcedByGuards,
+	CanBeForcedInStocks,
 	Condom,
 	SoldByGeneralVendomat,
 	SoldByMedicalVendomat,
 	SoldByUnderwearVendomat,
+	SoldByTheAnnouncer,
 	ChastityCage,
+	Strapon,
+	BreastPump,
 	
 	GuardUniform,
 	NurseUniform,
@@ -17,6 +21,9 @@ enum {
 	GeneralInmateUniform,
 	HighSecurityInmateUniform,
 	SexualDeviantInmateUniform,
+	
+	CanPeeInto,
+	CanForceCumInto,
 }
 
 static func getName(tag):

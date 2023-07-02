@@ -12,10 +12,16 @@ var temporaryState = {}
 var exposedBodyparts = []
 
 var armsCuffed = false
+var armsPuppy = false
 var legsCuffed = false
+var legsPuppy = false
 var breastsLeaking = false
 var pussyLeaking = false
 var anusLeaking = false
+
+var temporaryRiggedParts = {}
+
+var rememberedPenisScale = 1.0
 
 export(bool) var addTestBody = false
 
@@ -67,9 +73,10 @@ func testBody():
 	#addPartObject("tail", load("res://Player/Player3D/Parts/Tail/HuskyTail/HuskyTail.tscn").instance())
 	#addPartObject("penis", load("res://Player/Player3D/Parts/Penis/DragonPenis/DragonPenis.tscn").instance())
 	#addPartObject("penis", load("res://Player/Player3D/Parts/Penis/HumanPenis/HumanPenis.tscn").instance())
-	addPartObject("penis", load("res://Player/Player3D/Parts/Penis/CaninePenis/CaninePenis.tscn").instance())
-	addPartObject("hair", load("res://Player/Player3D/Parts/Hair/FerriHair/FerriHair.tscn").instance())
-	#addPartObject("hair", load("res://Player/Player3D/Parts/Hair/PonytailHair/PonytailHair.tscn").instance())
+	#addPartObject("penis", load("res://Player/Player3D/Parts/Penis/CaninePenis/CaninePenis.tscn").instance())
+	addPartObject("penis", load("res://Player/Player3D/Parts/Penis/EquinePenis/EquinePenis.tscn").instance())
+	#addPartObject("hair", load("res://Player/Player3D/Parts/Hair/FerriHair/FerriHair.tscn").instance())
+	addPartObject("hair", load("res://Player/Player3D/Parts/Hair/PonytailHair/PonytailHair.tscn").instance())
 	#addPartObject("hair", load("res://Player/Player3D/Parts/Hair/CombedBackHair/CombedBackHair.tscn").instance())
 	#addPartObject("hair", load("res://Player/Player3D/Parts/Hair/LongHair/LongHair.tscn").instance())
 	#addPartObject("hair", load("res://Player/Player3D/Parts/Hair/MessyHair/MessyHair.tscn").instance())
@@ -102,6 +109,11 @@ func setTemporaryState(stateID, value):
 	for slot in parts:
 		var part = parts[slot]
 		part.setState(stateID, value)
+
+func getState(stateID):
+	if(state.has(stateID)):
+		return state[stateID]
+	return null
 
 func getFinalState(stateID):
 	if(temporaryState.has(stateID)):
@@ -161,6 +173,8 @@ func addPartObject(slot, part: Spatial):
 		dollAttachmentZone.setProxy(attachmentProxy)
 		dollAttachmentZone.setSkeletonPath(dollAttachmentZone.get_path_to(getDollSkeleton().getSkeleton()))
 		attachmentProxy.dollAttachmentZone = dollAttachmentZone
+		dollAttachmentZone.shouldScaleWithBone = attachmentProxy.scaleWithBone
+			
 		
 		if(!dollAttachmentZones.has(attachmentProxy.zoneName)):
 			dollAttachmentZones[attachmentProxy.zoneName] = []
@@ -294,7 +308,8 @@ func setBoneOffset(boneName: String, offset: Vector3):
 	skeleton.set_bone_custom_pose(boneId, newTransform)
 
 func setButtScale(buttScale: float):
-	setBoneScale("DeformButt", buttScale)
+	var buttScaleMod = 1.0 + clamp(buttScale - 1.0, 0.0, 0.2)
+	setBoneScaleAndOffset("DeformButt", buttScale*buttScaleMod, Vector3(-0.109556, -0.109556, 0.0)*clamp((buttScale-1.0)*3, 0.0, 1.0))
 	setBoneOffset("Tail1", Vector3(0.409556, 0.409556, 0.0)*max(buttScale-1.0, 0.0))
 
 func setBreastsScale(breastsScale: float):
@@ -312,6 +327,11 @@ func setThighThickness(progress: float):
 
 func setPenisScale(penisScale: float):
 	setBoneScale("Penis", penisScale)
+	rememberedPenisScale = penisScale
+
+func clampPenisScale(minPenisScale: float, maxPenisScale: float):
+	rememberedPenisScale = clamp(rememberedPenisScale, minPenisScale, maxPenisScale)
+	setBoneScale("Penis", rememberedPenisScale)
 
 func setBallsScale(newScale: float):
 	var offsetScale = 0.0
@@ -378,12 +398,21 @@ func setParts(newparts: Dictionary):
 	for newslot in newparts:
 		addPartUnlessSame(newslot, newparts[newslot])
 		dirtyFlags[newslot] = true
+	for newslot in temporaryRiggedParts:
+		addPartUnlessSame(newslot, temporaryRiggedParts[newslot])
+		dirtyFlags[newslot] = true
 	
 	for slot in parts.keys():
 		if(!dirtyFlags[slot]):
 			removeSlot(slot)
 			
 	updateAlpha()
+
+func setCustomParts(newparts: Dictionary):
+	if(temporaryRiggedParts == newparts):
+		return
+	
+	temporaryRiggedParts = newparts
 
 func clearOverrideAlpha():
 	for slot in overridenPartHidden:
@@ -438,6 +467,18 @@ func setLegsCuffed(newcuffed):
 func getLegsCuffed():
 	return legsCuffed
 
+func setArmsPuppy(newcuffed):
+	armsPuppy = newcuffed
+	
+func getArmsPuppy():
+	return armsPuppy
+	
+func setLegsPuppy(newcuffed):
+	legsPuppy = newcuffed
+	
+func getLegsPuppy():
+	return legsPuppy
+
 func getCharacterID():
 	return savedCharacterID
 
@@ -484,3 +525,116 @@ func setCockTemporaryHard():
 		return
 	
 	setTemporaryState("cock", "")
+
+func setCockTemporaryCondom():
+	var currentCockState = getFinalState("cock")
+	if(currentCockState in ["caged", "condom"]):
+		return
+	
+	setTemporaryState("cock", "condom")
+
+func setCockTemporaryCaged():
+	#var currentCockState = getFinalState("cock")
+	#if(currentCockState in ["caged", "condom"]):
+	#	return
+	
+	setTemporaryState("cock", "caged")
+
+func applyBodyState(bodystate):
+	if(bodystate == null):
+		bodystate = {}
+	
+	var shouldExposeChest = bodystate.has("exposedChest") && bodystate["exposedChest"]
+	var shouldExposeCrotch = bodystate.has("exposedCrotch") && bodystate["exposedCrotch"]
+	var shouldBeNaked = bodystate.has("naked") && bodystate["naked"]
+	var shouldShowUnderwear = bodystate.has("underwear") && bodystate["underwear"]
+	var shouldBeHard = bodystate.has("hard") && bodystate["hard"]
+	var shouldBeCaged = bodystate.has("caged") && bodystate["caged"]
+	var shouldBeCondom = bodystate.has("condom") && bodystate["condom"]
+	#var shouldLookLeft = bodystate.has("lookLeft") && bodystate["lookLeft"]
+	
+	var exposeBodyparts = []
+	if(shouldExposeChest || shouldBeNaked):
+		exposeBodyparts.append_array([
+			BodypartSlot.Breasts,
+		])
+	if(shouldExposeCrotch || shouldBeNaked):
+		exposeBodyparts.append_array([
+			BodypartSlot.Penis,
+			BodypartSlot.Vagina,
+			BodypartSlot.Anus,
+		])
+	if(shouldBeNaked):
+		exposeBodyparts.append_array([
+			BodypartSlot.Body,
+			BodypartSlot.Arms,
+			BodypartSlot.Legs,
+		])
+	if(shouldShowUnderwear):
+		exposeBodyparts.append_array([
+			BodypartSlot.Body,
+		])
+	
+	setExposedBodyparts(exposeBodyparts)
+		
+	if(shouldBeHard):
+		setCockTemporaryHard()
+		
+	if(shouldBeCaged):
+		setCockTemporaryCaged()
+	
+	if(shouldBeCondom):
+		setCockTemporaryCondom()
+	
+#	if(bodystate.has("lookLeft")):
+#		if(shouldLookLeft):
+#			scale.x = abs(scale.x)
+#		else:
+#			scale.x = -abs(scale.x)
+
+func calculateDifferences():
+	var skeleton:Skeleton = getDollSkeleton().getSkeleton()
+	
+	var result = {}
+	var ini = Transform.IDENTITY
+	
+	for boneID in range(skeleton.get_bone_count()):
+		var boneName = skeleton.get_bone_name(boneID)
+		
+		var pose:Transform = skeleton.get_bone_pose(boneID)
+		if(pose != ini):
+			var stuff = {}
+			if(pose.origin != ini.origin && pose.origin.length()>0.001):
+				stuff["p"] = [Util.roundF(pose.origin.x, 2), Util.roundF(pose.origin.y, 2), Util.roundF(pose.origin.z, 2)]
+			if(pose.basis.get_rotation_quat() != ini.basis.get_rotation_quat()):
+				var euler = pose.basis.get_euler()
+				stuff["a"] = [Util.roundF(euler.x, 2), Util.roundF(euler.y, 2), Util.roundF(euler.z, 2)]
+			#print(pose)
+			result[boneName] = stuff
+	
+	return result
+
+func applyData(data):
+	var skeleton:Skeleton = getDollSkeleton().getSkeleton()
+	
+	var ini:Transform = Transform.IDENTITY
+	
+	for boneIndex in range(skeleton.get_bone_count()):
+		var theboneID = skeleton.get_bone_name(boneIndex)
+		if(data.has(theboneID)):
+			var boneData = data[theboneID]
+			var a
+			if(boneData.has("a")):
+				a = boneData["a"]
+			else:
+				a = Vector3(0.0,0.0,0.0)
+			var p
+			if(boneData.has("p")):
+				p = boneData["p"]
+			else:
+				p = Vector3(0.0,0.0,0.0)
+			var b:Basis = Basis(Vector3(a[0], a[1], a[2]))
+			var t:Transform = Transform(b, Vector3(p[0], p[1], p[2]))
+			skeleton.set_bone_pose(boneIndex, t)
+		else:
+			skeleton.set_bone_pose(boneIndex, ini)

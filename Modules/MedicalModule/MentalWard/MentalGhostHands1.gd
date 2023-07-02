@@ -55,7 +55,7 @@ func _run():
 	if(state == "follow"):
 		# (launches a walking scene first)
 		aimCameraAndSetLocName("med_researchlab")
-		GM.main.playAnimation(StageScene.Solo, "sit")
+		playAnimation(StageScene.Solo, "sit")
 
 		saynn("Eliza brings you into the lab and leashes you to the testing table. The leash is short enough for you not to be able to reach any equipment. You take a seat on the edge of the table and get cozy in your straitjacket while Eliza turns away and walks up to her chemistry station.")
 
@@ -223,4 +223,9 @@ func _react(_action: String, _args):
 	
 	setState(_action)
 
+func getDevCommentary():
+	return "Ghost hands is kinda an interesting concept. But it doesn't really fit the sci-fi setting because ghosts.. But I made it fit anyway x3. I had an idea for such drug a loooong time ago, even before I started writing this game. I hope it was interesting to read at least. Basically it just makes you blind for anything that's not static. But you still see anything that touches you and only it. Or maybe you feel the heat or something. And then your brain visualizes that as transparent ghost-like entities"
+
+func hasDevCommentary():
+	return true
 

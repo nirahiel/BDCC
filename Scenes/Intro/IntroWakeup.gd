@@ -8,7 +8,7 @@ func _init():
 func _run():
 	if(state == ""):
 		addCharacter("risha")
-		GM.main.playAnimation(StageScene.Duo, "stand", {npc="risha"})
+		playAnimation(StageScene.Duo, "stand", {npc="risha"})
 		
 		saynn("You were too tired to see any dreams tonight but you managed to get some good sleep at least. The sound of inmate chatter and their footsteps on concrete floors wake you up. You open your eyes and see a guard behind the window, the one that was protecting the captain yesterday. She knocks on the window and turns on the intercom.")
 
@@ -75,3 +75,9 @@ func _react(_action: String, _args):
 
 func _react_scene_end(_tag, _result):
 	pass
+
+func getDevCommentary():
+	return "This small scene was added just to tell the players that skipped most of the reading: Go to the fucking mineshaft!\n\nYeah, it's written in a way that implies that Risha will come after you if you don't do that. Why doesn't she? I'm lazy x3. And also.. I dunno, she would just fuck you or something. What if you want to explore around first without being fucked by some dickgirl if you press one wrong button? Yeah, I can make it optional or something.."
+
+func hasDevCommentary():
+	return true

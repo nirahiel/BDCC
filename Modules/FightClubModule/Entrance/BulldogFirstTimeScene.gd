@@ -6,7 +6,7 @@ func _init():
 func _run():
 	if(state == ""):
 		addCharacter("bulldog")
-		GM.main.playAnimation(StageScene.Duo, "stand", {npc="bulldog"})
+		playAnimation(StageScene.Duo, "stand", {npc="bulldog"})
 
 	if(state == ""):
 		saynn("Being very curious, you decide to wander closer to the only soul nearby. The high security inmate quickly notices you, he is of a canine species with his face reminding you of a bulldog. His maw is squashed but also angry-looking with fangs clearly visible.")
@@ -119,3 +119,8 @@ func _react(_action: String, _args):
 
 	setState(_action)
 
+func getDevCommentary():
+	return "Bulldog.. I just needed someone who would guard the entrance to the underground.. And bulldog is that someone x3. Some people seemed to enjoy his content enough to want more. But he is literally just a wall.\n\nIf you ever watched the Caravan Palace - Lone Digger music video, this bulldog would be the bouncer of that club x3"
+
+func hasDevCommentary():
+	return true

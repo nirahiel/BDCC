@@ -153,7 +153,9 @@ func equipItem(item):
 	var slot = item.getClothingSlot()
 	
 	if(equippedItems.has(slot)):
-		assert(false)
+		Log.printerr("Trying to equip an item to slot "+str(slot)+" when there is already an item")
+		return false
+		#assert(false)
 	
 	if(!canEquipSlot(slot)):
 		return false
@@ -170,7 +172,13 @@ func unequipItem(item):
 		addItem(theitem)
 		return true
 	return false
-	
+
+func clearSlot(slot):
+	var theitem = removeItemFromSlot(slot)
+	if(theitem != null):
+		return true
+	return false
+
 func unequipSlot(slot):
 	var theitem = removeItemFromSlot(slot)
 	if(theitem != null):
@@ -341,6 +349,9 @@ func getEquppedRestraints():
 			result.append(item)
 	return result
 
+func getEquippedRestraints():
+	return getEquppedRestraints()
+
 func hasRemovableRestraints():
 	for itemSlot in equippedItems:
 		var item = equippedItems[itemSlot]
@@ -377,9 +388,20 @@ func forceRestraintsWithTag(tag, amount = 1):
 				return result
 	return result
 
-func getAmountOfRestraintsThatCanForce(tag):
+func getFirstItemThatCoversBodypart(bodypartSlot):
+	for inventorySlot in InventorySlot.getAll():
+		if(!hasSlotEquipped(inventorySlot)):
+			continue
+		
+		var item = getEquippedItem(inventorySlot)
+		if(item.coversBodypart(bodypartSlot)):
+			return item
+	
+	return null
+
+func getRestraintsThatCanBeForcedDuringSex(tag):
 	var itemIDs = GlobalRegistry.getItemIDsByTag(tag)
-	var result = 0
+	var result = []
 	
 	for itemID in itemIDs:
 		var potentialItem = GlobalRegistry.getItemRef(itemID)
@@ -387,14 +409,23 @@ func getAmountOfRestraintsThatCanForce(tag):
 		var slot = potentialItem.getClothingSlot()
 		if(slot == null || !canEquipSlot(slot)):
 			continue
-		
+
 		if(hasSlotEquipped(slot)):
 			var ourItem = getEquippedItem(slot)
 			if(ourItem.isRestraint()):
 				continue
 		
-		result += 1
+		var bodypartSlot = potentialItem.getRequiredBodypart()
+		var coversItem = getFirstItemThatCoversBodypart(bodypartSlot)
+		if(bodypartSlot != null && coversItem != null):
+			if(coversItem.isRestraint()):
+				continue
+		
+		result.append(itemID)
 	return result
+
+func getAmountOfRestraintsThatCanForceDuringSex(tag):
+	return getRestraintsThatCanBeForcedDuringSex(tag).size()
 
 func clearStaticRestraints():
 	for slot in InventorySlot.getStatic():

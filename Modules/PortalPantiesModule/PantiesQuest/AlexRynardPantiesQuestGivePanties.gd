@@ -6,7 +6,7 @@ func _init():
 func _run():
 	if(state == ""):
 		addCharacter("alexrynard")
-		GM.main.playAnimation(StageScene.Duo, "stand", {npc="alexrynard"})
+		playAnimation(StageScene.Duo, "stand", {npc="alexrynard"})
 
 	if(state == ""):
 		# (You give him the panties. Foxy starts modifying them by putting little portals inside and attaching them. He also somehow modifies them to be unremovable?)
@@ -51,7 +51,9 @@ func _run():
 		addButton("Put them on", "See what happens", "put_them_on")
 
 	if(state == "put_them_on"):
-		GM.main.playAnimation(StageScene.Duo, "stand", {npc="alexrynard", exposedBodyparts=[BodypartSlot.Body]})
+		playAnimation(StageScene.Duo, "stand", {npc="alexrynard", 
+			bodyState={exposedCrotch=true},
+		})
 		
 		# (You put the panties on, cold metal rubs against your privates)
 
@@ -218,3 +220,8 @@ func _react(_action: String, _args):
 
 	setState(_action)
 
+func getDevCommentary():
+	return "So yeah, portal panties. I don't even know if any other game has them. I'm sure there are some now but back then this tag was pretty empty even on the e621 side x3. No, there were some great art pieces already ^^. Just not that much. They are what made me want to try my hand at writing a portal panties quest.\n\nThe idea of portal sex is pretty lewd. Someone make portal panties irl pls, you will solve so many problems x3"
+
+func hasDevCommentary():
+	return true

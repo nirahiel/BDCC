@@ -14,6 +14,8 @@ var perks = []
 var lustActions = []
 var statusEffects = []
 var worldEdits = []
+var gameExtenders = []
+var computers = []
 
 var id = "badmodule"
 var author = "no author"
@@ -58,6 +60,12 @@ func register():
 
 	for worldEdit in worldEdits:
 		GlobalRegistry.registerWorldEdit(worldEdit)
+	
+	for gameExtender in gameExtenders:
+		GlobalRegistry.registerGameExtender(gameExtender)
+	
+	for computer in computers:
+		GlobalRegistry.registerComputer(computer)
 
 func registerEventTriggers():
 	pass

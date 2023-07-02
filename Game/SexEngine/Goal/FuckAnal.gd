@@ -11,3 +11,15 @@ func isPossible(_sexEngine, _domInfo, _subInfo, _data):
 		return true
 	
 	return false
+
+func getSubGoals(_sexEngine, _domInfo, _subInfo, _data):
+	return {
+		SexGoal.SubUndressSub: 1.0,
+		SexGoal.SubUndressDom: 1.0,
+		SexGoal.SubOptionalCondomOnDom: 1.0,
+	}
+
+func canLeadToSubsPregnancy(_sexEngine, _domInfo, _subInfo, _data):
+	if(_subInfo.getChar().hasWombIn(BodypartSlot.Anus)):
+		return true
+	return false

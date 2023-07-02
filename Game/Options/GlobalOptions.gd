@@ -16,7 +16,7 @@ var uiScaleMultiplier = 1.0
 var requireDoubleTapOnMobile = false
 var uiButtonSize:int = 0
 
-var showSpeakerName = false
+var showSpeakerName = true
 var fontSize = "normal"
 var showShortcuts = true
 var showSceneCreator = true
@@ -24,15 +24,18 @@ var showSceneCreator = true
 var measurementUnits = "metric"
 
 var debugPanel = false
-
 var showMapArt = false
+var developerCommentary = false
 
 var showCharacterArt = true
+var showSceneArt = true
 var imagePackOrder = []
 
 var rollbackEnabled = false
 var rollbackSlots = 5
 var rollbackSaveEvery = 1
+
+var showModdedLauncher = false
 
 func resetToDefaults():
 	fetchNewRelease = true
@@ -42,7 +45,7 @@ func resetToDefaults():
 	npcPregnancyTimeDays = 5
 	shouldScaleUI = true
 	uiScaleMultiplier = 1.0
-	showSpeakerName = false
+	showSpeakerName = true
 	fontSize = "normal"
 	showShortcuts = true
 	measurementUnits = "metric"
@@ -52,10 +55,13 @@ func resetToDefaults():
 	showMapArt = false
 	#imagePackOrder = []
 	showCharacterArt = true
+	showSceneArt = true
 	showSceneCreator = true
 	rollbackEnabled = false
 	rollbackSlots = 5
 	rollbackSaveEvery = 1
+	showModdedLauncher = false
+	developerCommentary = false
 	
 	enabledContent.clear()
 	for contentType in ContentType.getAll():
@@ -116,6 +122,9 @@ func isDebugPanelEnabled():
 func shouldShowCharacterArt():
 	return showCharacterArt
 
+func shouldShowSceneArt():
+	return showSceneArt
+
 func shouldShowSceneCreator():
 	return showSceneCreator
 
@@ -131,8 +140,27 @@ func getRollbackSlotsAmount():
 func getRollbackSaveEveryXChoices():
 	return rollbackSaveEvery
 
+func shouldShowModdedLauncher():
+	return showModdedLauncher
+
+func developerCommentaryEnabled():
+	return developerCommentary
+
 func getChangeableOptions():
 	var settings = [
+		{
+			"name": "Modding",
+			"id": "modding",
+			"options": [
+				{
+					"name": "Enable Modded BDCC Launcher",
+					"description": "Restart the game to see it. Allows you to manage your mods and download new ones",
+					"id": "showModdedLauncher",
+					"type": "checkbox",
+					"value": showModdedLauncher,
+				},
+			],
+		},
 		{
 			"name": "Pregnancy settings",
 			"id": "pregnancy",
@@ -297,6 +325,13 @@ func getChangeableOptions():
 					"value": showCharacterArt,
 				},
 				{
+					"name": "Show scene art",
+					"description": "Display the art associated with the current scene (if available)",
+					"id": "showSceneArt",
+					"type": "checkbox",
+					"value": showSceneArt,
+				},
+				{
 					"name": "Image packs",
 					"description": "Choose artist priority",
 					"id": "imagePackOrder",
@@ -313,12 +348,19 @@ func getChangeableOptions():
 					"value": showSceneCreator,
 				},
 				{
-					"name": "Show map art (WIP)",
-					"description": "(WORK IN PROGRESS) Shows props and walls on the minimap when supported",
-					"id": "showMapArt",
+					"name": "Developer commentary",
+					"description": "Enables developer commentary for scenes that support it",
+					"id": "developerCommentary",
 					"type": "checkbox",
-					"value": showMapArt,
+					"value": developerCommentary,
 				},
+#				{
+#					"name": "Show map art (WIP)",
+#					"description": "(WORK IN PROGRESS) Shows props and walls on the minimap when supported",
+#					"id": "showMapArt",
+#					"type": "checkbox",
+#					"value": showMapArt,
+#				},
 			],
 		},
 		{
@@ -381,6 +423,12 @@ func getChangeableOptions():
 	return settings
 
 func applyOption(categoryID, optionID, value):
+	if(categoryID == "modding"):
+		if(optionID == "showModdedLauncher"):
+			showModdedLauncher = value
+			if(showModdedLauncher):
+				var _ok = OS.request_permissions()
+	
 	if(categoryID == "pregnancy"):
 		if(optionID == "menstrualCycleLengthDays"):
 			menstrualCycleLengthDays = value
@@ -416,10 +464,14 @@ func applyOption(categoryID, optionID, value):
 			uiButtonSize = value
 		if(optionID == "showCharacterArt"):
 			showCharacterArt = value
+		if(optionID == "showSceneArt"):
+			showSceneArt = value
 		if(optionID == "showSceneCreator"):
 			showSceneCreator = value
 		if(optionID == "showMapArt"):
 			showMapArt = value
+		if(optionID == "developerCommentary"):
+			developerCommentary = value
 		
 	if(categoryID == "render"):
 		if(optionID == "renderer"):
@@ -471,11 +523,14 @@ func saveData():
 		"debugPanel": debugPanel,
 		"imagePackOrder": imagePackOrder,
 		"showCharacterArt": showCharacterArt,
+		"showSceneArt": showSceneArt,
 		"showSceneCreator": showSceneCreator,
 		"showMapArt": showMapArt,
 		"rollbackEnabled": rollbackEnabled,
 		"rollbackSlots": rollbackSlots,
 		"rollbackSaveEvery": rollbackSaveEvery,
+		"showModdedLauncher": showModdedLauncher,
+		"developerCommentary": developerCommentary,
 	}
 	
 	return data
@@ -490,7 +545,7 @@ func loadData(data):
 	shouldScaleUI = loadVar(data, "shouldScaleUI", true)
 	uiScaleMultiplier = loadVar(data, "uiScaleMultiplier", 1.0)
 	uiButtonSize = loadVar(data, "uiButtonSize", 0)
-	showSpeakerName = loadVar(data, "showSpeakerName", false)
+	showSpeakerName = loadVar(data, "showSpeakerName", true)
 	fontSize = loadVar(data, "fontSize", "normal")
 	showShortcuts = loadVar(data, "showShortcuts", true)
 	measurementUnits = loadVar(data, "measurementUnits", "metric")
@@ -498,11 +553,14 @@ func loadData(data):
 	debugPanel = loadVar(data, "debugPanel", false)
 	imagePackOrder = loadVar(data, "imagePackOrder", [])
 	showCharacterArt = loadVar(data, "showCharacterArt", true)
+	showSceneArt = loadVar(data, "showSceneArt", true)
 	showSceneCreator = loadVar(data, "showSceneCreator", true)
 	showMapArt = loadVar(data, "showMapArt", false)
 	rollbackEnabled = loadVar(data, "rollbackEnabled", false)
 	rollbackSlots = loadVar(data, "rollbackSlots", 5)
 	rollbackSaveEvery = loadVar(data, "rollbackSaveEvery", 1)
+	showModdedLauncher = loadVar(data, "showModdedLauncher", false)
+	developerCommentary = loadVar(data, "developerCommentary", false)
 
 func saveToFile():
 	var saveData = saveData()
@@ -555,7 +613,7 @@ func checkImagePackOrder(imagePacks):
 	
 	for imagePackID in imagePacks:
 		if(!newImagePackOrder.has(imagePackID)):
-			newImagePackOrder.append(imagePackID)
+			newImagePackOrder.push_front(imagePackID)
 	
 	imagePackOrder = newImagePackOrder
 	print("checkImagePackOrder DONE ",imagePackOrder)

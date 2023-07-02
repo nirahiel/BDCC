@@ -7,7 +7,7 @@ func _init():
 
 func _run():
 	if(state == ""):
-		GM.main.playAnimation(StageScene.Duo, "stand", {npc="captain", npcAction="stand"})
+		playAnimation(StageScene.Duo, "stand", {npc="captain", npcAction="stand"})
 		aimCamera("intro_arrive")
 		setLocationName("Spaceship hangar")
 		
@@ -57,7 +57,7 @@ func _run():
 		addButton("Follow", "Follow the officer and his guard", "follow")
 		
 	if(state == "shoveaway"):
-		GM.main.playAnimation(StageScene.Solo, "shove")
+		playAnimation(StageScene.Solo, "shove")
 		
 		saynn("You slap his arm away and shove him back. You growl and bare your fangs.")
 		
@@ -81,7 +81,7 @@ func _run():
 		aimCamera("intro_intakearea")
 		setLocationName("Intake area")
 		
-		GM.main.playAnimation(StageScene.Solo, "walk")
+		playAnimation(StageScene.Solo, "walk")
 		
 		saynn("You follow the officer through some corridor and enter an inmate processing area. You see a little showering area that's divided from the main room with glass and automatic doors. Then there are some kinds of vendomats and, lastly, a small medical area. The floor has useful lines that show the order in which to process the inmate.")
 		
@@ -99,7 +99,7 @@ func _run():
 		addButton("Fuck no", "Say that you will never do it. This might not be the best idea", "notundress")
 	
 	if(state == "undress"):
-		GM.main.playAnimation(StageScene.Solo, "stand", {exposedBodyparts=[BodypartSlot.Body]})
+		playAnimation(StageScene.Solo, "stand", {bodyState={naked=true}})
 		aimCamera("intro_nearshower")
 		
 		saynn("Initial confusion is switched with embarrassment, you immediately blush just from the thought.")
@@ -115,7 +115,7 @@ func _run():
 		addButton("Shower", "Take the refreshing shower", "shower")
 		
 	if(state == "notundress"):
-		GM.main.playAnimation(StageScene.Duo, "stand", {npc="risha", npcAction="stand"})
+		playAnimation(StageScene.Duo, "stand", {npc="risha", npcAction="stand"})
 		
 		aimCamera("intro_nearshower")
 		
@@ -137,7 +137,7 @@ func _run():
 		saynn("It wasn’t a fair fight at all, the guard had every single advantage. You can’t stand up anymore, the pain is too much. You can only grunt while the guard puts her baton away and cracks her knuckles. The officer crouches near you and forces you to look at him.")
 
 	if(state == "wonrisha"):
-		GM.main.playAnimation(StageScene.Solo, "defeat")
+		playAnimation(StageScene.Duo, "defeat", {npc="captain", npcAction="firepistol"})
 		
 		saynn("The guard kneels before you, defeated, her hand drops the baton as she grunts from pain. You quickly pick up the weapon and turn it on.")
 
@@ -177,7 +177,7 @@ func _run():
 		aimCamera("intro_shower")
 		setLocationName("Shower")
 		
-		GM.main.playAnimation(StageScene.Solo, "walk", {exposedBodyparts=[BodypartSlot.Body]})
+		playAnimation(StageScene.Solo, "walk", {bodyState={naked=true}})
 		
 		saynn("You step into the shower area that's closed-off with glass. It’s a small room with many shower heads attached to the ceiling. You keep covering yourself as a normal person would while preparing for the worst. And yes, when the shower begins, you feel that the water is freezing cold. It's so cold that you groan audibly.")
 		
@@ -211,7 +211,7 @@ func _run():
 		aimCamera("intro_aftershower")
 		setLocationName("Intake area")
 		
-		GM.main.playAnimation(StageScene.Solo, "walk")
+		playAnimation(StageScene.Solo, "walk")
 		
 		saynn("You step out back into the intake room and follow the lines on the floor to your next stop. You see a vendomat mounted onto a wall, it’s a machine capable of producing and dispensing different things. Near it on a wall is a console. It looks pretty dated, a screen that can only output green color, a bulky card reader and a mechanical keyboard, not even sensory. The officer begins to type some stuff into it while the guard watches you out.")
 		
@@ -331,3 +331,9 @@ func _react_scene_end(_tag, _result):
 		else:
 			setState("losttorisha")
 			addExperienceToPlayer(20)
+
+func getDevCommentary():
+	return "So this is probably the earliest actual written scene if you don't count the fighting one ^^. If you ever been on RRDC, a place in second life, you will find all of this very familiar.. Because this is pretty much how intakes work in there x3. RRDC is basically a place for rp if you didn't know. I will be honest, I just wanted to turn that rp place into a game x3. Why? To tell my own stories I guess.. I only copied the prison idea itself, all the lore and characters and stories are fully written by me.\n\nBut yeah ^^. This scene introduces you to the captain, probably one of the most powerful people on the station. So of course he has to be kind ^^. But also strict and all that. He is balanced out by his bloodthirsty hornythirsty guard Risha. Risha is a bitch x3 she is clearly enjoying the power she has over inmates. Would be cool to maybe write some content for her where you somehow set her up, making it so she is caught and turned into an inmate herself. But that would require so much thinking.. I basically have to write 2 games then, where Risha is guard or inmate. And that sounds ehhhhhhh.. would be cool though"
+
+func hasDevCommentary():
+	return true

@@ -5,6 +5,8 @@ func _init():
 
 func _run():
 	if(state == ""):
+		playAnimation(StageScene.Sleeping, "sleep")
+		
 		saynn("You lay down on your stiff prisoner bed and let out a tired sigh")
 		
 		saynn("What do you wanna do?")
@@ -26,13 +28,15 @@ func _run():
 		addButton("Continue", "Time to wake up", "endthescene")
 		
 	if(state == "slept"):
+		playAnimation(StageScene.Sleeping, "sleep", {bodyState={naked=true}})
+		
 		saynn("You slept in your cell. It's not the most pleasent experience but you managed to recover your energy")
 		
 		saynn("You wake up when all the prison lights begin to turn on.")
 		
 		saynn("Welcome to day "+str(GM.main.getDays())+" of your sentence")
 		
-		addButton("Continue", "Time to wake up", "endthescene")
+		addButton("Continue", "Time to wake up", "endthesceneandtriggerevents")
 		
 		GM.ES.triggerRun(Trigger.WakeUpInCell)
 
@@ -54,10 +58,17 @@ func _react(_action: String, _args):
 		GM.main.startNewDay()
 		GM.pc.afterSleepingInBed()
 		
+		if(GM.ES.triggerReact(Trigger.SleepInCell)):
+			pass
+		
 		setState("slept")
 		return
 
 	if(_action == "endthescene"):
+		endScene()
+		return
+
+	if(_action == "endthesceneandtriggerevents"):
 		GM.pc.updateAppearance()
 		
 		if(GM.ES.triggerReact(Trigger.WakeUpInCell)):

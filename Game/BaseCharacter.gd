@@ -27,6 +27,7 @@ var lustInterests: LustInterests
 var fetishHolder: FetishHolder
 var personality: Personality
 var sexVoice: SexVoice
+var bodyFluids: Fluids
 
 # Bodypart stuff
 var bodyparts: Dictionary
@@ -77,6 +78,7 @@ func _ready():
 	personality = Personality.new()
 	personality.setCharacter(self)
 	createVoice()
+	bodyFluids = Fluids.new()
 
 func getID():
 	assert(false, "Getting an ID of a baseCharacter class")
@@ -168,7 +170,7 @@ func addEffect(effectID: String, args = []):
 	statusEffectsStorageNode.add_child(effect)
 	
 	statusEffects[effectID] = effect
-	buffsHolder.calculateBuffs()
+	#buffsHolder.calculateBuffs()
 
 func hasEffect(effectID: String):
 	return statusEffects.has(effectID)
@@ -182,7 +184,7 @@ func removeEffect(effectID: String):
 	if(statusEffects.has(effectID)):
 		statusEffects[effectID].queue_free()
 		var _wasremoved = statusEffects.erase(effectID)
-		buffsHolder.calculateBuffs()
+		#buffsHolder.calculateBuffs()
 	
 func canStandUpCombat():
 	if(!hasEffect(StatusEffect.Collapsed)):
@@ -206,6 +208,8 @@ func loadStatusEffectsData(data):
 	
 	for effectID in data:
 		var effect = GlobalRegistry.createStatusEffect(effectID)
+		if(effect == null):
+			continue
 		effect.setCharacter(self)
 		statusEffects[effectID] = effect
 		statusEffectsStorageNode.add_child(effect)
@@ -230,7 +234,7 @@ func processBattleTurn():
 		
 	skillsHolder.processBattleTurn()
 		
-	buffsHolder.calculateBuffs()
+	#buffsHolder.calculateBuffs()
 		
 func beforeFightStarted():
 	pass
@@ -247,6 +251,9 @@ func afterFightEnded():
 			removeEffect(effectID)
 	
 func isPlayer():
+	return false
+
+func isOverriddenPlayer():
 	return false
 
 func _getAttacks():
@@ -269,10 +276,11 @@ func getArmor(_damageType):
 	return armor
 	
 func calculateBuffs():
-	buffsHolder.calculateBuffs()
+	#buffsHolder.calculateBuffs()
+	pass
 	
 func onEquippedItemsChange():
-	calculateBuffs()
+	#calculateBuffs()
 	updateAppearance()
 	
 func onStatChange():
@@ -540,12 +548,10 @@ func verbS(verbWithNoS, verbWithS = null):
 		return verbWithS
 
 func getPenisSizeString() -> String:
-	if(!hasBodypart(BodypartSlot.Penis)):
+	if(!hasBodypart(BodypartSlot.Penis) && !isWearingStrapon()):
 		return "ERROR:NO_PENIS"
 	
-	var penis = getBodypart(BodypartSlot.Penis)
-	var size = penis.getLength()
-	return Util.cmToString(size)
+	return Util.cmToString(getPenisSize())
 
 func getInventory() -> Inventory:
 	return inventory
@@ -623,6 +629,12 @@ func getLootTable(_battleName):
 
 func getLoot(_battleName):
 	var lootTable = getLootTable(_battleName)
+	if(lootTable is String):
+		lootTable = GlobalRegistry.getLootTable(lootTable)
+	
+	if(lootTable == null):
+		return {"credits": 0, "items": []}
+	
 	var generatedLoot = lootTable.generate(getID(), _battleName)
 	
 	var resultCredits = 0
@@ -646,6 +658,10 @@ func getBodypartTooltipInfo(_bodypartSlot):
 	return "error"
 
 func getPenisSize():
+	var strapon = getWornStrapon()
+	if(strapon != null):
+		return strapon.getStraponLength()
+	
 	if(!hasBodypart(BodypartSlot.Penis)):
 		return 20.0
 	
@@ -653,35 +669,57 @@ func getPenisSize():
 	return bodypart.getLength()
 
 func getFluidType(fluidSource):
-	if(fluidSource == BodilyFluids.FluidSource.Penis):
-		return BodilyFluids.FluidType.Cum
-	if(fluidSource == BodilyFluids.FluidSource.Vagina):
-		return BodilyFluids.FluidType.GirlCum
-	if(fluidSource == BodilyFluids.FluidSource.Strapon):
-		return BodilyFluids.FluidType.CumLube
+	if(fluidSource == FluidSource.Penis):
+		return "Cum"
+	if(fluidSource == FluidSource.Vagina):
+		return "GirlCum"
+	if(fluidSource == FluidSource.Strapon):
+		return "CumLube"
+	if(fluidSource == FluidSource.Breasts):
+		return "Milk"
+	if(fluidSource == FluidSource.Pissing):
+		return "Piss"
 		
 	return null
 
 func getFluidAmount(fluidSource):
-	if(fluidSource == BodilyFluids.FluidSource.Penis):
+	if(fluidSource == FluidSource.Penis):
 		if(hasBodypart(BodypartSlot.Penis)):
 			var penis:BodypartPenis = getBodypart(BodypartSlot.Penis)
 			return penis.getFluidProduction().getFluidAmount()
 		return RNG.randf_range(100.0, 500.0)
-	if(fluidSource == BodilyFluids.FluidSource.Vagina):
+	if(fluidSource == FluidSource.Vagina):
 		return RNG.randf_range(50.0, 200.0)
-	if(fluidSource == BodilyFluids.FluidSource.Strapon):
+	if(fluidSource == FluidSource.Strapon):
 		return RNG.randf_range(100.0, 500.0)
+	if(fluidSource == FluidSource.Pissing):
+		return RNG.randf_range(100.0, 500.0)
+	if(fluidSource == FluidSource.Breasts):
+		if(hasBodypart(BodypartSlot.Breasts)):
+			var breasts:BodypartBreasts = getBodypart(BodypartSlot.Breasts)
+			return breasts.getFluidProduction().getFluidAmount()
+		return 0.0
 		
 	return 0.0
 
-func extractFluidAmount(fluidSource, howmuch = 1.0):
-	if(fluidSource == BodilyFluids.FluidSource.Penis):
-		if(hasBodypart(BodypartSlot.Penis)):
-			var penis:BodypartPenis = getBodypart(BodypartSlot.Penis)
-			return penis.getFluidProduction().drain(howmuch)
-
-	return getFluidAmount(fluidSource)
+func getFluidDNA(fluidSource):
+	var fluidDNA = FluidDNA.new()
+	fluidDNA.charID = getID()
+	fluidDNA.virility = 0.0
+	fluidDNA.species = getSpecies()
+	
+	# Fluids produced by your balls can always get someone pregnant
+	if(fluidSource == FluidSource.Penis):
+		fluidDNA.virility = getVirility()
+	
+	# Cum can get you pregnant even if it was generated elsewhere
+	var fluidType = getFluidType(fluidSource)
+	if(fluidType != null):
+		var fluidObject = GlobalRegistry.getFluid(fluidType)
+		if(fluidObject != null && fluidObject.canImpregnate()):
+			fluidDNA.virility = getVirility()
+	
+	return fluidDNA
 
 func getFemininity() -> int:
 	return 50
@@ -732,6 +770,10 @@ func resetSlots():
 	processingBodyparts.clear()
 
 func giveBodypart(bodypart: Bodypart, emitSignal = true):
+	if(bodypart == null):
+		Log.printerr("Trying to give a null bodypart to "+str(self))
+		return
+	
 	var slot = bodypart.getSlot()
 	if(bodyparts.has(slot) && bodyparts[slot] != null):
 		removeBodypart(slot, false)
@@ -803,28 +845,46 @@ func clearOrificeFluidsCheckBlocked():
 		
 	return success
 
-func cummedInBodypartBy(bodypartSlot, characterID, sourceType = null):
+func cummedInBodypartBy(bodypartSlot, characterID, sourceType = null, amountToTransfer = 1.0):
 	if(!hasBodypart(bodypartSlot)):
 		return
 	
 	var ch = GlobalRegistry.getCharacter(characterID)
 	if(sourceType == null):
-		sourceType = BodilyFluids.FluidSource.Penis
+		sourceType = FluidSource.Penis
 	
-	var thebodypart = getBodypart(bodypartSlot)
-	thebodypart.addFluidOrifice(ch.getFluidType(sourceType), ch.extractFluidAmount(sourceType), characterID)
-	skillsHolder.receivedCreampie(characterID)
-	if(ch != null):
-		ch.getSkillsHolder().cameInsideSomeone(getID())
+	if(sourceType == FluidSource.Penis && ch.hasBodypart(BodypartSlot.Penis)):
+		var thebodypart = getBodypart(bodypartSlot)
+		var usedBodypart = ch.getBodypart(BodypartSlot.Penis)
+		
+		var fluids = usedBodypart.getFluids()
+		
+		if(fluids != null):
+			fluids.transferTo(thebodypart, amountToTransfer)
+	elif(sourceType == FluidSource.Strapon && ch.isWearingStrapon()):
+		var thebodypart = getBodypart(bodypartSlot)
+		var strapon = ch.getWornStrapon()
+		
+		var fluids = strapon.getFluids()
+		if(fluids != null):
+			fluids.transferTo(thebodypart, amountToTransfer)
+	else:
+		var thebodypart = getBodypart(bodypartSlot)
+		thebodypart.addFluidOrifice(ch.getFluidType(sourceType), ch.getFluidAmount(sourceType) * amountToTransfer, ch.getFluidDNA(sourceType))
 	
-func cummedInVaginaBy(characterID, sourceType = null):
-	cummedInBodypartBy(BodypartSlot.Vagina, characterID, sourceType)
+	if(sourceType in [FluidSource.Penis, FluidSource.Strapon]):
+		skillsHolder.receivedCreampie(characterID)
+		if(ch != null):
+			ch.getSkillsHolder().cameInsideSomeone(getID())
+	
+func cummedInVaginaBy(characterID, sourceType = null, amountToTransfer = 1.0):
+	cummedInBodypartBy(BodypartSlot.Vagina, characterID, sourceType, amountToTransfer)
 
-func cummedInAnusBy(characterID, sourceType = null):
-	cummedInBodypartBy(BodypartSlot.Anus, characterID, sourceType)
+func cummedInAnusBy(characterID, sourceType = null, amountToTransfer = 1.0):
+	cummedInBodypartBy(BodypartSlot.Anus, characterID, sourceType, amountToTransfer)
 
-func cummedInMouthBy(characterID, sourceType = null):
-	cummedInBodypartBy(BodypartSlot.Head, characterID, sourceType)
+func cummedInMouthBy(characterID, sourceType = null, amountToTransfer = 1.0):
+	cummedInBodypartBy(BodypartSlot.Head, characterID, sourceType, amountToTransfer)
 
 func rubsVaginasWith(characterID, chanceToStealCum = 100, showMessages = true):
 	if(!RNG.chance(chanceToStealCum) || !OPTIONS.isContentEnabled(ContentType.CumStealing)):
@@ -859,6 +919,12 @@ func getOrificeMinLooseness(orificeType):
 	var value = 0.0
 	value += buffsHolder.getOrificeMinLooseness(orificeType)
 	return value
+	
+func getOrificePreventedFromRecovering(orificeType):
+	if(buffsHolder.getOrificePreventedFromRecovering(orificeType)):
+		return true
+	
+	return false
 	
 func getOrificeBlocked(orificeType):
 	return buffsHolder.getOrificeBlocked(orificeType)
@@ -961,6 +1027,8 @@ func getFertility():
 	
 	value += buffsHolder.getFertility()
 	
+	value *= (1.0 + buffsHolder.getCustom(BuffAttribute.FinalFertilityModifier))
+	
 	return value
 
 func getBaseVirility() -> float:
@@ -974,18 +1042,38 @@ func getVirility():
 	
 	value += buffsHolder.getVirility()
 	
+	value *= (1.0 + buffsHolder.getCustom(BuffAttribute.FinalVirilityModifier))
+	
 	return value
+	
+func getBaseEggsMod() -> float:
+	return 1.0
+
+func getEggsBonusMod():
+	var value = getBaseEggsMod()
+	
+	value += buffsHolder.getEggsBonusMod()
+	
+	return value
+	
+func getMinEggsAmount():
+	var value = buffsHolder.getMinEggsAmount()
+	
+	return max(value, 1) 
 
 func getCrossSpeciesCompatibility():
 	var value = 0.0
 	
 	value += buffsHolder.getCrossSpeciesCompatibility()
 	
+	if(hasPerk(Perk.FertilityBroodmother) && value < 1.0):
+		return 1.0
+	
 	return value
 
-func onFluidObsorb(orificeType, cumType, howMuch, who, virility):
+func onFluidObsorb(orificeType, cumType, howMuch, fluidDNA):
 	if(menstrualCycle != null):
-		menstrualCycle.obsorbCum(cumType, howMuch, who, orificeType, virility)
+		menstrualCycle.obsorbCum(cumType, howMuch, fluidDNA, orificeType)
 
 func getMenstrualCycle():
 	return menstrualCycle
@@ -1014,6 +1102,17 @@ func isReadyToGiveBirth():
 	if(menstrualCycle != null):
 		return menstrualCycle.isReadyToGiveBirth()
 	return false
+
+func giveBirth():
+	if(menstrualCycle == null):
+		return []
+	
+	clearOrificeFluids()
+	var bornChildren = getMenstrualCycle().giveBirth()
+	for child in bornChildren:
+		GM.CS.addChild(child)
+	
+	return bornChildren
 
 func forceIntoHeat():
 	if(menstrualCycle != null):
@@ -1089,7 +1188,7 @@ func hasHorns():
 func hasNonFlatBreasts():
 	var breasts = getBodypart(BodypartSlot.Breasts)
 	
-	var size = breasts.size
+	var size = breasts.getSize()
 	
 	if(size > BreastsSize.FLAT):
 		return true
@@ -1099,7 +1198,7 @@ func hasNonFlatBreasts():
 func hasBigBreasts():
 	var breasts = getBodypart(BodypartSlot.Breasts)
 	
-	var size = breasts.size
+	var size = breasts.getSize()
 	
 	if(size > BreastsSize.B):
 		return true
@@ -1133,6 +1232,10 @@ func milk(howmuch = 1.0):
 		return 0.0
 	var howMuchMilk = production.drain(howmuch)
 	production.afterMilked()
+	if(!hasPerk(Perk.MilkNoSoreNipples) && howmuch >= 0.5):
+		addEffect(StatusEffect.SoreNipplesAfterMilking)
+	if(isPlayer()):
+		addSkillExperience(Skill.Milking, 20)
 	return howMuchMilk
 
 func stimulateLactation():
@@ -1145,6 +1248,8 @@ func stimulateLactation():
 		return false
 	if(production.has_method("stimulate")):
 		return production.stimulate()
+	if(isPlayer()):
+		addSkillExperience(Skill.Milking, 10)
 	return false
 
 func canBeSeedMilked():
@@ -1370,20 +1475,45 @@ func getSkillExperienceMult(skill):
 
 	return mult
 
+func getBestZoneForTallymark(zonelist):
+	if(zonelist is int):
+		return zonelist
+	if(zonelist.size() == 0):
+		return null
+	
+	var marks = {}
+	if(hasEffect(StatusEffect.HasTallyMarks)):
+		marks = getEffect(StatusEffect.HasTallyMarks).marks
+	
+	var possible = []
+	for zone in zonelist:
+		var zonestr = str(zone)
+		var currentAmount = 0
+		if(marks.has(zonestr)):
+			currentAmount = marks[zonestr]
+		
+		var value:float = 1.0
+		if(currentAmount >= 1 && currentAmount < 20):
+			value = 1000.0 / float(currentAmount)
+		possible.append([zone, value])
+	return RNG.pickWeightedPairs(possible)
+
 func addTallymark(zone):
 	addEffect(StatusEffect.HasTallyMarks, [zone])
 
 func addTallymarkPickBestZone(zonelist):
-	addEffect(StatusEffect.HasTallyMarks, [zonelist])
+	var bestZone = getBestZoneForTallymark(zonelist)
+	addEffect(StatusEffect.HasTallyMarks, [bestZone])
+	return bestZone
 
 func addTallymarkFace():
-	addTallymarkPickBestZone([
+	return addTallymarkPickBestZone([
 		BodyWritingsZone.CheekLeft,
 		BodyWritingsZone.CheekRight,
 	])
 
 func addTallymarkCrotch():
-	addTallymarkPickBestZone([
+	return addTallymarkPickBestZone([
 		BodyWritingsZone.LowerAbdomen,
 		BodyWritingsZone.HipLeft,
 		BodyWritingsZone.HipRight,
@@ -1394,7 +1524,7 @@ func addTallymarkCrotch():
 	])
 
 func addTallymarkButt():
-	addTallymarkCrotch()
+	return addTallymarkCrotch()
 
 func hasTallymarks():
 	return hasEffect(StatusEffect.HasTallyMarks)
@@ -1404,6 +1534,10 @@ func clearTallymarks():
 
 func addBodywriting(zone, writingID):
 	addEffect(StatusEffect.HasBodyWritings, [zone, writingID])
+
+func addBodywritingRandom():
+	var zone = BodyWritingsZone.getRandomZone()
+	addBodywriting(zone, BodyWritings.getRandomWritingIDForZone(zone))
 
 func hasBodywritings():
 	return hasEffect(StatusEffect.HasBodyWritings)
@@ -1504,9 +1638,33 @@ func cumOnFloor():
 			production.fillPercent(buffsHolder.getCustom(BuffAttribute.CumGenerationAfterOrgasm))
 			return returnValue
 
-# Should apply a temporary cummed on status probably
-func cummedOnBy(_characterID, _sourceType = null, _howMessy: int = 1):
-	pass
+func cumInItem(theItem, sourceType = FluidSource.Penis, amountToTransfer = 1.0):
+	if(theItem.getFluids() == null):
+		return 0.0
+	
+	if(sourceType == FluidSource.Penis && hasBodypart(BodypartSlot.Penis)):
+		var penis:BodypartPenis = getBodypart(BodypartSlot.Penis)
+		var production: FluidProduction = penis.getFluidProduction()
+		if(production != null):
+			if(theItem.has_method("markLastUser")):
+				theItem.markLastUser(getName())
+			var returnValue = penis.getFluids().transferTo(theItem, amountToTransfer)
+			production.fillPercent(buffsHolder.getCustom(BuffAttribute.CumGenerationAfterOrgasm))
+			return returnValue
+	else:
+		return theItem.getFluids().addFluid(getFluidType(sourceType), getFluidAmount(sourceType) * amountToTransfer, getFluidDNA(sourceType))
+
+func createFilledCondom():
+	var theCondom = GlobalRegistry.createItem("UsedCondom")
+	cumInItem(theCondom)
+	return theCondom
+
+func lustStateFullyUndress():
+	var items = getInventory().getAllEquippedItems()
+	for itemSlot in items:
+		var lustState = items[itemSlot].getItemState()
+		if(lustState != null):
+			lustState.remove()
 
 func afterSexEnded(sexInfo):
 	if(sexInfo.getTimesCame() > 0):
@@ -1533,8 +1691,8 @@ func afterSexEnded(sexInfo):
 		item.resetLustState()
 		item.onSexEnd()
 		
-	if(personalityChangesAfterSex() && personality != null):
-		var resultText = sexInfo.affectPersonality(personality)
+	if(personalityChangesAfterSex() && personality != null && fetishHolder != null):
+		var resultText = sexInfo.affectPersonality(personality, fetishHolder)
 		if(resultText != null && resultText != ""):
 			GM.main.addMessage(resultText)
 		
@@ -1548,15 +1706,7 @@ func getVoice() -> SexVoice:
 	return sexVoice
 
 func getFirstItemThatCoversBodypart(bodypartSlot):
-	for inventorySlot in InventorySlot.getAll():
-		if(!getInventory().hasSlotEquipped(inventorySlot)):
-			continue
-		
-		var item = getInventory().getEquippedItem(inventorySlot)
-		if(item.coversBodypart(bodypartSlot)):
-			return item
-	
-	return null
+	return getInventory().getFirstItemThatCoversBodypart(bodypartSlot)
 	
 func getWornCondom():
 	if(getInventory().hasSlotEquipped(InventorySlot.Penis)):
@@ -1580,7 +1730,7 @@ func addConsciousness(newc:float):
 	consciousness = clamp(consciousness, 0.0, 1.0)
 
 func isReadyToPenetrate() -> bool:
-	return getLustLevel() >= 0.5 || getLust() >= 50 || getArousal() >= 0.4
+	return getLustLevel() >= 0.5 || getLust() >= 50 || getArousal() >= 0.4 || isWearingStrapon()
 
 func isWearingChastityCage() -> bool:
 	# Having a chastity cage also means that you have a penis
@@ -1610,7 +1760,7 @@ func getBodypartContentsStringList(bodypartID):
 	
 	var processedFluidNames = []
 	for fluidID in messFluids:
-		processedFluidNames.append(BodilyFluids.FluidType.getName(fluidID))
+		processedFluidNames.append(BodilyFluids.getFluidName(fluidID))
 	
 	if(processedFluidNames.size() == 1):
 		return "some "+processedFluidNames[0]
@@ -1635,7 +1785,7 @@ func bodypartTransferFluidsTo(bodypartID, otherCharacterID, otherBodypartID, fra
 	if(otherOrifice == null):
 		return false
 	
-	return orifice.transferTo(otherOrifice, fraction, minAmount)
+	return orifice.transferTo(otherOrifice, fraction, minAmount) > 0.0
 
 func bodypartShareFluidsWith(bodypartID, otherCharacterID, otherBodypartID, fraction = 0.5):
 	if(!hasBodypart(bodypartID)):
@@ -1662,7 +1812,7 @@ func processSexTurn():
 		var effect = statusEffects[effectID]
 		effect.processSexTurn()
 		
-	buffsHolder.calculateBuffs()
+	#buffsHolder.calculateBuffs()
 
 func addTimedBuffs(buffs: Array, seconds):
 	for newbuff in buffs:
@@ -1677,7 +1827,6 @@ func addTimedBuffs(buffs: Array, seconds):
 	
 	if(seconds > timedBuffsDurationSeconds):
 		timedBuffsDurationSeconds = seconds
-	updateNonBattleEffects()
 
 func addTimedBuffsTurns(buffs: Array, turns):
 	if(!GM.main.supportsBattleTurns()):
@@ -1695,10 +1844,9 @@ func addTimedBuffsTurns(buffs: Array, turns):
 	
 	if(turns > timedBuffsDurationTurns):
 		timedBuffsDurationTurns = turns
-	updateNonBattleEffects()
 
 func updateNonBattleEffects():
-	pass
+	buffsHolder.calculateBuffs()
 
 func saveBuffsData(buffs):
 	var data = []
@@ -1734,6 +1882,11 @@ func hasAnyWomb():
 	if(menstrualCycle == null):
 		return false
 	return menstrualCycle.hasAnyWomb()
+
+func hasWombIn(bodypartSlot):
+	if(!hasBodypart(bodypartSlot)):
+		return false
+	return getBodypart(bodypartSlot).hasWomb()
 
 func getDefaultArtwork(_variant = []):
 	return "res://Images/UI/GenericFace.png"
@@ -1771,3 +1924,156 @@ func getBodypartLewdDescriptionAndNameWithA(bodypartSlot):
 	if(!hasBodypart(bodypartSlot)):
 		return "ERROR:NO BODYPART IN SLOT " + str(bodypartSlot)
 	return getBodypart(bodypartSlot).getLewdDescriptionAndNameWithA()
+
+func isDynamicCharacter():
+	return false
+
+func canWearStrapon():
+	if(hasPenis() && !isWearingChastityCage()):
+		return false
+	
+	if(getInventory().hasSlotEquipped(InventorySlot.Strapon)):
+		return false
+	
+	return true
+
+func hasStrapons():
+	return getInventory().getItemsWithTag(ItemTag.Strapon).size() > 0
+
+func getStrapons():
+	return getInventory().getItemsWithTag(ItemTag.Strapon)
+
+func isWearingStrapon():
+	return getWornStrapon() != null
+
+func getWornStrapon():
+	if(getInventory().hasSlotEquipped(InventorySlot.Strapon)):
+		var item = getInventory().getEquippedItem(InventorySlot.Strapon)
+		if(item.hasTag(ItemTag.Strapon)):
+			return item
+	return null
+
+func removeStrapon():
+	var theStrapon = getWornStrapon()
+	if(theStrapon == null):
+		return null
+	return getInventory().removeEquippedItem(theStrapon)
+
+func unequipStrapon():
+	var theStrapon = getWornStrapon()
+	if(theStrapon == null):
+		return null
+	return getInventory().unequipItem(theStrapon)
+
+func doPainfullyStretchHole(_bodypart, _who = "pc"):
+	pass
+
+func doWound(_who = "pc"):
+	pass
+
+func unequipAllRestraints():
+	for item in inventory.getEquppedRestraints():
+		if(item.isImportant()):
+			continue
+		
+		inventory.unequipItem(item)
+
+func removeAllRestraints():
+	for item in inventory.getEquppedRestraints():
+		if(item.isImportant()):
+			continue
+		
+		inventory.removeEquippedItem(item)
+
+func getFluids():
+	return bodyFluids
+
+func clearBodyFluids():
+	bodyFluids.clear()
+	
+func coverBodyWithFluid(fluidType, amount, fluidDNA = null):
+	bodyFluids.addFluid(fluidType, amount, fluidDNA)
+	
+func cummedOnBy(characterID, sourceType = null, howMuchPercent = 1.0):
+	var ch = GlobalRegistry.getCharacter(characterID)
+	if(sourceType == null):
+		if(ch.getGender() == Gender.Female):
+			sourceType = FluidSource.Vagina
+		else:
+			sourceType = FluidSource.Penis
+	
+	if(sourceType == FluidSource.Penis && ch.hasBodypart(BodypartSlot.Penis)):
+		var usedBodypart = ch.getBodypart(BodypartSlot.Penis)
+		var fluids = usedBodypart.getFluids()
+		
+		if(fluids != null):
+			fluids.transferTo(bodyFluids, howMuchPercent)
+	else:
+		coverBodyWithFluid(ch.getFluidType(sourceType), ch.getFluidAmount(sourceType)*howMuchPercent, ch.getFluidDNA(sourceType))
+
+func pissedOnBy(_characterID, howMuch = 1.0):
+	cummedOnBy(_characterID, FluidSource.Pissing, howMuch)
+	
+	#addEffect(StatusEffect.DrenchedInPiss)
+
+func getOutsideMessinessLevel():
+	var fluidAmount = bodyFluids.getFluidAmount()
+	if(fluidAmount <= 0.0):
+		return 0
+	elif(fluidAmount < 100.0):
+		return 1
+	elif(fluidAmount < 300.0):
+		return 2
+	elif(fluidAmount < 500.0):
+		return 3
+	elif(fluidAmount < 1000.0):
+		return 4
+	else:
+		return 5
+
+func isCoveredInFluids():
+	if(bodyFluids.isEmpty()):
+		return false
+	return true
+
+func afterTakingAShower():
+	#addStamina(30)
+	clearBodyFluids()
+	clearBodywritings()
+	clearTallymarks()
+
+func isTooLewd(ignoreHeat = true):
+	var theExposure = getExposure()
+	if(ignoreHeat && hasEffect(StatusEffect.InHeat)):
+		theExposure -= 50
+	
+	if(theExposure > 0):
+		return true
+	return false
+
+func shouldCondomBreakWhenFucking(characterPenetrated, chance: float = 20.0, showMessages = true) -> bool:
+	if(!OPTIONS.isContentEnabled(ContentType.RiskyCondoms)):
+		return false
+	
+	var character
+	if(characterPenetrated is String):
+		character = GlobalRegistry.getCharacter(characterPenetrated)
+	else:
+		character = characterPenetrated
+	
+	if(character.hasPerk(Perk.FertilityDesireToBreed)):
+		if(RNG.chance(chance)):
+			character.addPain(-20)
+			if(showMessages && character.isPlayer()):
+				GM.main.addMessage("You didn't even sabotage that condom.. but it still feels good..")
+			return true
+		
+		chance = clamp((chance * 3.0), 30, 95) #limits max chance to break to 95%
+		if(RNG.chance(chance) && !character.hasBlockedHands()):
+			character.addPain(-20)
+			if(showMessages && character.isPlayer()):
+				GM.main.addMessage("Your hands sneakily sabotage the condom.. feels good..")
+			return true
+		return false
+	
+	return RNG.chance(chance)

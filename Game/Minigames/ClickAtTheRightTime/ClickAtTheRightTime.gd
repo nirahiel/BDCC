@@ -3,6 +3,7 @@ extends Control
 onready var cursor = $GameScreen/Panel/Cursor
 onready var redZone = $GameScreen/Panel/Panel
 onready var orangeZone = $GameScreen/Panel/Panel2
+onready var goldenZone = $GameScreen/Panel/Panel3
 var time = 0.0
 var cursorSpeed = 1.0
 var timer = 10.0
@@ -10,6 +11,12 @@ var timeLeft = timer
 var difficulty = 5.0
 var redPart = 0.1
 var freeze = false
+var goldenZoneVisible = false
+var isBlindFoldedVersion = false
+
+var hasAdvancedPerk = false
+var perfectStreak = 0
+var howMuchForPerfect = 0.25
 
 var difficultySettings = [
 	{
@@ -31,23 +38,23 @@ var difficultySettings = [
 	{
 		timer = 6.0,
 		cursorSpeedMin = 2.2,
-		cursorSpeedMax = 3.2,
+		cursorSpeedMax = 2.5,
 		zoneDifficultyMin = 10.0,
 		zoneDifficultyMax = 15.0,
 		redPart = 0.1,
 	},
 	{
 		timer = 5.0,
-		cursorSpeedMin = 3.2,
-		cursorSpeedMax = 4.2,
+		cursorSpeedMin = 2.5,
+		cursorSpeedMax = 3.1,
 		zoneDifficultyMin = 20.0,
 		zoneDifficultyMax = 25.0,
 		redPart = 0.15,
 	},
 	{
 		timer = 4.0,
-		cursorSpeedMin = 4.2,
-		cursorSpeedMax = 5.2,
+		cursorSpeedMin = 2.9,
+		cursorSpeedMax = 3.5,
 		zoneDifficultyMin = 55.0,
 		zoneDifficultyMax = 85.0,
 		redPart = 0.1,
@@ -77,18 +84,56 @@ signal minigameCompleted(finalScore)
 func _ready():
 	setIngame(false)
 
+	setGoldenZoneVisible(false)
 	setDifficulty(2)
+	setIsBlindfolded(false)
+
+func setIsBlindfolded(theblindfolded):
+	isBlindFoldedVersion = theblindfolded
+	
+	if(isBlindFoldedVersion):
+		$GameScreen/Panel/Panel2.visible = false
+		$GameScreen/Panel/Panel.visible = false
+		$GameScreen/Panel/Panel3.visible = false
+		$GameScreen/Panel/BlindText.visible = true
+	else:
+		$GameScreen/Panel/Panel2.visible = true
+		$GameScreen/Panel/Panel.visible = true
+		$GameScreen/Panel/Panel3.visible = goldenZoneVisible
+		$GameScreen/Panel/BlindText.visible = false
+
+func setHasAdvancedPerk(thehasAdvancedPerk):
+	hasAdvancedPerk = thehasAdvancedPerk
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
+	if(isBlindFoldedVersion):
+		delta /= 2.0
+	
 	if(ingame && !freeze):
 		if(timeLeft > 0 && (timeLeft - delta) <= 0):
-			emit_signal("minigameCompleted", 0.0)
+			emit_signal("minigameCompleted", calcFinalScore())
 		time += delta
 		timeLeft -= delta
 		
 		setCursorPosition(getCursorPosition())
 		setTimeBar(timeLeft/timer)
+		
+		var flatStyle:StyleBoxFlat = $GameScreen/Panel.get_stylebox("panel")
+		if(isBlindFoldedVersion):
+			flatStyle.bg_color = Color.red
+			
+			var score = getScore()
+			if(score >= 1000.0):
+				flatStyle.bg_color = Color("ffe300")
+			elif(score >= 1.0):
+				flatStyle.bg_color = Color("990000")
+			elif(score > 0.0):
+				flatStyle.bg_color = Color("990000").darkened(1.1 - score)
+			else:
+				flatStyle.bg_color = Color.black
+		else:
+			flatStyle.bg_color = Color.black
 	
 func getCursorPosition():
 	return (sin(time*cursorSpeed) + 1.0)/2.0
@@ -102,6 +147,8 @@ func setCursorPosition(pos:float):
 
 func getScore():
 	var cursorPostion = getCursorPosition()
+	if(goldenZoneVisible && cursorPostion >= goldenZone.anchor_left && cursorPostion <= goldenZone.anchor_right):
+		return 10000.0
 	if(cursorPostion >= redZone.anchor_left && cursorPostion <= redZone.anchor_right):
 		return 1.0
 	if(cursorPostion >= orangeZone.anchor_left && cursorPostion <= redZone.anchor_left):
@@ -124,6 +171,9 @@ func generateZone(thedifficulty = 1.0):
 	var orangeSize = 0.3/pow(thedifficulty, 0.1)
 	
 	setZone(pos, size, orangeSize)
+	
+	#setGoldenZone(pos + RNG.randf_range(-orangeSize/2.0, orangeSize/2.0), 0.03)
+	setGoldenZone(RNG.randf_range(0.0, 1.0), 0.05)
 
 func setZone(pos, size, orangeSize):
 	redZone.anchor_left = clamp(pos-size/2.0, 0.0, 1.0)
@@ -131,6 +181,21 @@ func setZone(pos, size, orangeSize):
 	
 	orangeZone.anchor_left = clamp(pos-size/2.0-orangeSize/2.0, 0.0, 1.0)
 	orangeZone.anchor_right = clamp(pos+size/2.0+orangeSize/2.0, 0.0, 1.0)
+	
+func setGoldenZone(pos, size):
+	goldenZone.anchor_left = clamp(pos-size/2.0, 0.0, 1.0)
+	goldenZone.anchor_right = clamp(pos+size/2.0, 0.0, 1.0)
+	
+func setGoldenZoneVisible(isVis):
+	goldenZoneVisible = isVis
+	if(goldenZoneVisible):
+		goldenZone.visible = true
+	else:
+		goldenZone.visible = false
+		#print("INVIS")
+
+func instantEscapePerk():
+	setGoldenZoneVisible(true)
 	
 func _on_Button_pressed():
 	setIngame(true)
@@ -144,13 +209,44 @@ func setIngame(newingame):
 		$StartMenu.visible = true
 		$GameScreen.visible = false
 
+func calcFinalScore(isLost = false):
+	var theScore = getScore()
+	if(isLost):
+		theScore = 0.0
+	if(hasAdvancedPerk && perfectStreak > 0):
+		var finalScore = 1.0 + howMuchForPerfect * (perfectStreak - 1) + theScore * howMuchForPerfect
+		return finalScore
+	return theScore
 
+func setStreakColor(theColor):
+	streakLabel.add_color_override("font_color", theColor)
+
+var tween
+onready var streakLabel = $GameScreen/StreakLabel
 func _on_ClickAtTheRightTime_gui_input(event):
 	if(event is InputEventMouseButton):
 		if(event.pressed && !freeze):
+			if(hasAdvancedPerk):
+				var theScore = getScore()
+				if(theScore >= 1.0 && theScore <= 2.0):
+					perfectStreak += 1
+					timeLeft += 1.0
+					timeLeft = min(timer, timeLeft)
+					streakLabel.text = "Perfect Streak: "+str(perfectStreak)+" (+"+str(Util.roundF(howMuchForPerfect*perfectStreak*100.0, 1))+"%)"
+					
+					if tween:
+						tween.kill()
+					tween = create_tween()
+					#tween.tween_method(self, "setStreakColor", Color.white, Color.red, 0.1)
+					tween.tween_method(self, "setStreakColor", Color.red, Color.white, 0.2)
+					# reset pos
+					generateZone(difficulty)
+					return
+				
+			
 			freeze = true
 			yield(get_tree().create_timer(0.5), "timeout")
 			freeze = false
 			#generateZone(RNG.randf_range(1.0, 10.0))
 			#setDifficulty(5)
-			emit_signal("minigameCompleted", getScore())
+			emit_signal("minigameCompleted", calcFinalScore())

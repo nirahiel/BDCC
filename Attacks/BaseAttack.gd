@@ -10,6 +10,8 @@ var category = Category.Physical
 var aiCategory = AICategory.Unspecified
 var aiScoreMultiplier = 1
 
+var isWeaponAttack = false # true means the damage will be affected by the melee damage buffs
+
 func _init():
 	pass
 	
@@ -100,6 +102,9 @@ func checkRequirement(_attacker, _receiver, req):
 	if(reqtype == AttackRequirement.CanBite):
 		if(_attacker.isBitingBlocked()):
 			return false
+	if(reqtype == AttackRequirement.CanSee):
+		if(_attacker.isBlindfolded()):
+			return false
 	if(reqtype == AttackRequirement.CoveredInCum):
 		if(!_attacker.hasEffect(StatusEffect.CoveredInCum)):
 			return false
@@ -141,6 +146,8 @@ func getRequirementText(req):
 		return "Mouth must be free"
 	if(reqtype == AttackRequirement.CanBite):
 		return "Must be able to bite"
+	if(reqtype == AttackRequirement.CanSee):
+		return "Must be able to see"
 	if(reqtype == AttackRequirement.CoveredInCum):
 		return "Must be covered in cum/girlcum"
 	if(reqtype == AttackRequirement.LustAbove):
@@ -173,15 +180,22 @@ func getRequirementsColorText(_attacker, _receiver):
 func getRecieverArmorScaling(_attacker, _receiver, _damageType) -> float:
 	return 1.0
 
+func getAttackerDamageMultiplierEfficiency(_attacker, _receiver, _damageType) -> float:
+	return 1.0
+
 func calcDamage(_attacker, _receiver, _damageType, _damage: int) -> int:
-	var damageMult = _attacker.getDamageMultiplier(_damageType)
+	var damageMult = _attacker.getDamageMultiplier(_damageType) * getAttackerDamageMultiplierEfficiency(_attacker, _receiver, _damageType)
+	if(isWeaponAttack):
+		damageMult += GM.pc.getCustomAttribute(BuffAttribute.MeleeWeaponsDamage)
 	if(_damage < 0):
 		damageMult = -damageMult
 		
 	return int(round(_damage * (1.0 + damageMult)))
 
 func doDamage(_attacker, _receiver, _damageType, _damage: int, _playGetHitAnimation = true):
-	var damageMult = _attacker.getDamageMultiplier(_damageType)
+	var damageMult = _attacker.getDamageMultiplier(_damageType) * getAttackerDamageMultiplierEfficiency(_attacker, _receiver, _damageType)
+	if(isWeaponAttack):
+		damageMult += GM.pc.getCustomAttribute(BuffAttribute.MeleeWeaponsDamage)
 	if(_damage < 0):
 		damageMult = -damageMult
 	
@@ -282,6 +296,8 @@ func getAttackSoloAnimation():
 
 func scaledDmgStr(_damageType, _damage: int):
 	var damageMult = GM.pc.getDamageMultiplier(_damageType)
+	if(isWeaponAttack):
+		damageMult += GM.pc.getCustomAttribute(BuffAttribute.MeleeWeaponsDamage)
 	
 	var damage = round(_damage * (1.0 + damageMult))
 	
@@ -289,6 +305,8 @@ func scaledDmgStr(_damageType, _damage: int):
 
 func scaledDmgRangeStr(_damageType, min_damage: int, max_damage: int):
 	var damageMult = GM.pc.getDamageMultiplier(_damageType)
+	if(isWeaponAttack):
+		damageMult += GM.pc.getCustomAttribute(BuffAttribute.MeleeWeaponsDamage)
 	
 	var damage1 = round(min_damage * (1.0 + damageMult))
 	var damage2 = round(max_damage * (1.0 + damageMult))
@@ -376,3 +394,6 @@ func itemExists(_context):
 			return false
 		return true
 	return false
+
+func combineWeaponAttacks():
+	return true

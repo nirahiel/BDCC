@@ -7,12 +7,14 @@ func _init():
 
 func getGoals():
 	return {
-		SexGoal.FuckAnal: 1.0,
-		SexGoal.FuckVaginal: 1.0,
-		SexGoal.FuckOral: 1.0,
+		SexGoal.SubUndressDom: 1.0,
+	}
 
-		SexGoal.ReceiveAnal: 1.0,
-		SexGoal.ReceiveVaginal: 1.0,
+func getSupportedSexTypes():
+	return {
+		SexType.DefaultSex: true,
+		SexType.StocksSex: true,
+		SexType.SlutwallSex: true,
 	}
 
 func getActivityBaseScore(_sexEngine: SexEngine, _domInfo: SexDomInfo, _subInfo: SexSubInfo):

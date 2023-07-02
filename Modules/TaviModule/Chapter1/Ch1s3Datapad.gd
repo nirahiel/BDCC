@@ -11,7 +11,7 @@ func _run():
 		addCharacter("tavi")
 		
 	if(state == ""):
-		GM.main.playAnimation(StageScene.Duo, "stand", {pc="tavi"})
+		playAnimation(StageScene.Duo, "stand", {pc="tavi"})
 		
 		# (Either way Risha loses and gets bullied by you or Tavi.)
 
@@ -269,11 +269,11 @@ func _run():
 	if(state == "drugs"):
 		# (She becomes angry again after thinking that the captain wants to drug her. She says we must steal these drugs and make him pay, the other lead might be worth investigating too)
 
-		saynn("[say=pc]The captain ordered some kind ‘mind-melting’ drugs.[/say]")
+		saynn("[say=pc]The captain ordered some kind ‘mind-melting’ drug.[/say]")
 
 		saynn("Tavi quickly changes in her face, now looking quite concerned.")
 
-		saynn("[say=tavi]Mind-melting drugs?[/say]")
+		saynn("[say=tavi]Mind-melting drug?[/say]")
 
 		saynn("[say=pc]Is that a problem?[/say]")
 

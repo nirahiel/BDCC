@@ -6,7 +6,7 @@ func _init():
 func _run():
 	if(state == ""):
 		addCharacter("rebel")
-		GM.main.playAnimation(StageScene.Duo, "stand", {npc="rebel", npcAction="kneel"})
+		playAnimation(StageScene.Duo, "stand", {npc="rebel", npcAction="kneel"})
 
 	if(state == ""):
 		saynn("Rebel grunts and drops down to her knee while panting heavily. Her weight is now working against her, pulling her body down.")
@@ -34,7 +34,10 @@ func _run():
 		addButton("Continue", "Time to leave", "endthescene")
 
 	if(state == "fisting"):
-		GM.main.playAnimation(StageScene.Duo, "stand", {npc="rebel", npcAction="kneel", npcExposedBodyparts=[BodypartSlot.Vagina]})
+		playAnimation(StageScene.Spanking, "tease", {
+			npc="rebel", pc="pc",
+			bodyState={exposedCrotch=true,}
+		})
 		
 		saynn("The crowd cheers louder as you put on your mean eyes and step towards the defeated opponent. Rebel’s face expression shows acceptance, she tries to cover herself but you take a running start and shove her down to the floor.")
 
@@ -111,7 +114,7 @@ func _run():
 
 		saynn("[say=pc]That’s right, I’m fisting your ass. And you seem to enjoy it, what a butt whore.[/say]")
 
-		saynn("After the mare gets used to having a fist up her butt, you decide to go further. Your second arm joins the first but is directed towards the girl’s neglected pussy. You turn into a fist and start trying to slide it inside. It goes in way more easily, the folds were already half-spread because of the pressure on her ass. Eventually you manage to stuff both her holes at the same time. Even just having your fists inside makes the girl drip and moan softly.")
+		saynn("After the mare gets used to having a fist up her butt, you decide to go further. Your second arm joins the first but is directed towards the girl’s neglected pussy. You clench your hand into a fist and start trying to slide it inside. It goes in way more easily, the folds were already half-spread because of the pressure on her ass. Eventually you manage to stuff both her holes at the same time. Even just having your fists inside makes the girl drip and moan softly.")
 
 		saynn("[say=rebel]F-fuck..[/say]")
 

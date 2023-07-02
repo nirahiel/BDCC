@@ -16,20 +16,19 @@ func updateSubAnims():
 		animationTree["parameters/CuffsBlend/blend_amount"] = 0.0
 	
 func playAnimation(animID, _args = {}):
+	var fullAnimID = animID
+	if(animID is Array):
+		animID = animID[0]
 	print("Playing: "+str(animID))
 	if(_args.has("pc")):
 		doll.prepareCharacter(_args["pc"])
 	else:
 		doll.prepareCharacter("pc")
-	#doll.forceSlotToBeVisible(BodypartSlot.Penis)
-	
-	if(_args.has("exposedBodyparts")):
-		doll.setExposedBodyparts(_args["exposedBodyparts"])
+
+	if(_args.has("bodyState")):
+		doll.applyBodyState(_args["bodyState"])
 	else:
-		doll.setExposedBodyparts([])
-		
-	if(_args.has("hard") && _args["hard"]):
-		doll.setCockTemporaryHard()
+		doll.applyBodyState({})
 	
 	if(animID == "sit"):
 		$Chair.visible = true
@@ -38,6 +37,16 @@ func playAnimation(animID, _args = {}):
 	
 	updateSubAnims()
 	
-	var state_machine = animationTree["parameters/AnimationNodeStateMachine/playback"]
-	if(!stateMachineTravel(doll, state_machine, animID)):
-		Log.printerr("Action "+str(animID)+" is not found for stage "+str(id))
+	if(animID == "custom"):
+		animationTree.active = false
+		
+		doll.applyData(_args["anim"])
+	else:
+		animationTree.active = true
+		
+		var state_machine = animationTree["parameters/AnimationNodeStateMachine/playback"]
+		if(!stateMachineTravel(doll, state_machine, fullAnimID)):
+			Log.printerr("Action "+str(animID)+" is not found for stage "+str(id))
+
+func getSupportedStates():
+	return getSupportedStatesSolo()

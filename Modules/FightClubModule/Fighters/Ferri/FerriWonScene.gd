@@ -6,7 +6,7 @@ func _init():
 func _run():
 	if(state == ""):
 		addCharacter("ferri")
-		GM.main.playAnimation(StageScene.Duo, "stand", {npc="ferri", npcAction="kneel"})
+		playAnimation(StageScene.Duo, "stand", {npc="ferri", npcAction="kneel"})
 
 	if(state == ""):
 		saynn("Ferri cries out and drops to her knees, she is clearly unable to continue fighting. You approach her and grab her by one of her horns. She is panting heavily but you do hear her growling.")
@@ -38,7 +38,7 @@ func _run():
 		addButton("Continue", "Time to leave", "endthescene")
 
 	if(state == "petplay"):
-		GM.main.playAnimation(StageScene.Duo, "stand", {npc="ferri", npcAction="allfours"})
+		playAnimation(StageScene.PuppyDuo, "stand", {npc="ferri", npcAction="stand"})
 		
 		saynn("You keep the girl pinned to the floor while she keeps resisting and growling at you. Even after using her horns to shove her head into the floor she keeps snarling. The crowd cheers, some yell ‘Break the brat! Choke her! Does anyone have a muzzle?’.")
 
@@ -130,3 +130,8 @@ func _react(_action: String, _args):
 
 	setState(_action)
 
+func getDevCommentary():
+	return "You might have noticed that for some reason only Kait, Avy and Ferri have portraits drawn by me x3. Kait and Avy make sense, they play a part in the story. But Ferri.. She is just a cute brat.\n\nWell, Ferri is one of the 'invited' characters ^^. She is not my OC but they allowed me to use her and write for her ^^.\n\nWill she get more content? I doubt it. Since the community is slowly becoming bigger, the characters are also becoming more popular. And Ferri doesn't want that. And I will respect that ^^. She is a cute little brat still ^^"
+
+func hasDevCommentary():
+	return true

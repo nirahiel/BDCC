@@ -6,7 +6,11 @@ func _init():
 func _run():
 	if(state == ""):
 		addCharacter("bulldog")
-		GM.main.playAnimation(StageScene.Duo, "stand", {npc="bulldog", npcHard=true, exposedBodyparts=[BodypartSlot.Vagina, BodypartSlot.Anus], npcExposedBodyparts=[BodypartSlot.Penis]})
+		playAnimation(StageScene.SexStanding, "sex", {
+			pc="bulldog", npc="pc",
+			bodyState={exposedCrotch=true,hard=true},
+			npcBodyState={exposedCrotch=true},
+		})
 
 	if(state == ""):
 		saynn("Maybe the guy will let you through if you make him feel good. You tilt your head down and slowly close the distance, swaying your {pc.masc} thighs as you do. Your hand reaches for the bulldog’s chest and traces down with a single digit.")
@@ -84,6 +88,12 @@ func _run():
 		addButton("Cum!", "Let it happen", "cum!")
 
 	if(state == "cum!"):
+		playAnimation(StageScene.SexStanding, "fast", {
+			pc="bulldog", npc="pc",
+			bodyState={exposedCrotch=true,hard=true},
+			npcBodyState={exposedCrotch=true,hard=true},
+		})
+		
 		saynn("After a few tries, the bulldog gathers all of his strength for an even more powerful series of thrusts. At the last one your fuckhole gets force-stretched enough to let the knot slip in! The guy’s full length is inside you, it only takes you a few moments before the sensations overwhelm your body, sending a crazy amount of ecstatic pleasure spikes through you. You arch your back and let out many lewd muffled moans while drooling and passionately sucking on the fingers in your mouth.")
 
 		# (if has pussy)
@@ -121,7 +131,9 @@ func _run():
 	if(state == "afterFirstFuck"):
 		aimCameraAndSetLocName("gym_yoga")
 		addCharacter("inmateCrowd")
-		GM.main.playAnimation(StageScene.Solo, "defeat", {exposedBodyparts=[BodypartSlot.Vagina, BodypartSlot.Anus]})
+		playAnimation(StageScene.Solo, "defeat", {
+			bodyState={exposedCrotch=true},
+		})
 		
 		saynn("Bulldog tugs you by the collar back into the gym area. Oh no. You see many inmates there, minding their own business, lifting weights, doing exercises. All the while you are completely naked with cum leaking out of your used hole.")
 
@@ -410,8 +422,6 @@ func _react(_action: String, _args):
 		
 		GM.pc.addLust(100)
 		
-		GM.pc.updateNonBattleEffects()
-		
 	if(_action == "inmatesFirstLoad"):
 		GM.pc.cummedOnBy("inmateMale")
 		GM.pc.cummedOnBy("inmateMale")
@@ -496,3 +506,8 @@ func _react(_action: String, _args):
 
 	setState(_action)
 
+func getDevCommentary():
+	return "I can't really display gangbangs because I lack the animations so you will have to use your imagination during these (more than usually x3). But yeah, it's probably one of the first gang-bangs.. and there are probably not that many of them?..\n\nI don't really remember anything about writing this one x3. But my usual approach is to start pulling down on the details when more than 2 characters are fucking. Otherwise.. takes too long to write, takes too long to read, etc. But it's still more than 'you got gangbanged, try harder next time, lol'. Hopefully these are hot, I don't even know, I rarely get aroused from my own writing.. Sometimes I do ^^ when the situation is just too good/hot"
+
+func hasDevCommentary():
+	return true

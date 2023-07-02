@@ -43,7 +43,7 @@ func _run():
 	if(state == "follow"):
 		# (also runs the walking scene)
 		aimCameraAndSetLocName("med_researchlab")
-		GM.main.playAnimation(StageScene.Solo, "sit")
+		playAnimation(StageScene.Solo, "sit")
 
 		saynn("Doctor Quinn brings you into the research lab and makes you sit on the testing table before leashing your collar to one of its handy hooks.")
 
@@ -259,22 +259,22 @@ func _react(_action: String, _args):
 
 	if(_action == "mouth"):
 		GM.pc.gotOrificeStretchedWith(BodypartSlot.Head, 30)
-		GM.pc.cummedInMouthBy("eliza", BodilyFluids.FluidSource.Strapon)
-		GM.pc.cummedOnBy("eliza", BodilyFluids.FluidSource.Strapon)
+		GM.pc.cummedInMouthBy("eliza", FluidSource.Strapon)
+		GM.pc.cummedOnBy("eliza", FluidSource.Strapon)
 		#GM.pc.orgasmFrom("eliza")
 		GM.pc.addSkillExperience(Skill.SexSlave, 25)
 
 	if(_action == "cum!"):
 		GM.pc.gotOrificeStretchedWith(BodypartSlot.Vagina, 30)
-		GM.pc.cummedInVaginaBy("eliza", BodilyFluids.FluidSource.Strapon)
-		GM.pc.cummedOnBy("eliza", BodilyFluids.FluidSource.Strapon)
+		GM.pc.cummedInVaginaBy("eliza", FluidSource.Strapon)
+		GM.pc.cummedOnBy("eliza", FluidSource.Strapon)
 		GM.pc.orgasmFrom("eliza")
 		GM.pc.addSkillExperience(Skill.SexSlave, 30)
 		
 	if(_action == "cum!1"):
 		GM.pc.gotOrificeStretchedWith(BodypartSlot.Anus, 30)
-		GM.pc.cummedInAnusBy("eliza", BodilyFluids.FluidSource.Strapon)
-		GM.pc.cummedOnBy("eliza", BodilyFluids.FluidSource.Strapon)
+		GM.pc.cummedInAnusBy("eliza", FluidSource.Strapon)
+		GM.pc.cummedOnBy("eliza", FluidSource.Strapon)
 		GM.pc.orgasmFrom("eliza")
 		GM.pc.addSkillExperience(Skill.SexSlave, 30)
 		

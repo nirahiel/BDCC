@@ -3,6 +3,8 @@ class_name Player
 
 
 signal location_changed(newloc)
+signal holePainfullyStretched(bodypart, who)
+signal gotWoundedBy(who)
 
 var gamename = "Player"
 var credits:int = 0
@@ -15,10 +17,6 @@ var inmateNumber = "12859"
 var pickedFemininity: int = 50
 var pickedThickness: int = 50
 var inmateType = InmateType.General
-
-# Messy stuff
-var bodyFluids = []
-var bodyMessiness = 0
 
 # Intoxication stuff
 var intoxication: float = 0.0
@@ -146,8 +144,12 @@ func _getAttacks():
 		if(itemAttacks == null):
 			continue
 		for attackID in itemAttacks:
-			if(uniqueItemAttacks.has(item.id) && uniqueItemAttacks[item.id].has(attackID)):
+			var attack = GlobalRegistry.getAttack(attackID)
+			if(attack == null):
 				continue
+			if(attack.combineWeaponAttacks()):
+				if(uniqueItemAttacks.has(item.id) && uniqueItemAttacks[item.id].has(attackID)):
+					continue
 			
 			attacks.append({
 				"attackID": attackID,
@@ -164,7 +166,8 @@ func canHandleBlindness():
 	return skillsHolder.hasPerk(Perk.BDSMBlindfold)
 	
 func calculateBuffs():
-	updateNonBattleEffects()
+	#updateNonBattleEffects()
+	pass
 
 # They may have effect on your damage in battles but they're not a 'battle' effects
 func updateNonBattleEffects():
@@ -225,7 +228,7 @@ func updateNonBattleEffects():
 	else:
 		removeEffect(StatusEffect.Exhausted)
 		
-	if(getOutsideMessinessLevel() > 0):
+	if(!bodyFluids.isEmpty()):
 		addEffect(StatusEffect.CoveredInCum)
 	else:
 		removeEffect(StatusEffect.CoveredInCum)
@@ -271,29 +274,39 @@ func updateNonBattleEffects():
 	else:
 		removeEffect(StatusEffect.SexEnginePersonality)
 		removeEffect(StatusEffect.SexEngineLikes)
+
+	GM.GES.callGameExtenders(ExtendGame.pcUpdateNonBattleEffects, [self])
+
+	emit_signal("stat_changed")
 	
+	buffsHolder.calculateBuffs()
+	
+	# Exposed status effect depends on stats that are calculated from buffs so it needs to be here
 	if(GM.main != null && getExposure() > 0.0 && !GM.main.supportsSexEngine() && !GM.main.supportsBattleTurns()):
 		addEffect(StatusEffect.Exposed)
 	else:
 		removeEffect(StatusEffect.Exposed)
 
-	emit_signal("stat_changed")
-
 func processBattleTurn():
 	.processBattleTurn()
-	updateNonBattleEffects()
 	skillsHolder.giveSkillExperienceBattleTurn()
+
+	GM.GES.callGameExtenders(ExtendGame.pcProcessBattleTurn, [self])
 
 func beforeFightStarted():
 	.beforeFightStarted()
 	if(lustCombatState != null):
 		lustCombatState.enteredBattle()
+	
+	GM.GES.callGameExtenders(ExtendGame.pcBeforeFightStarted, [self])
 
 func afterFightEnded():
 	.afterFightEnded()
 	
 	if(lustCombatState != null):
 		lustCombatState.exitedBattle()
+		
+	GM.GES.callGameExtenders(ExtendGame.pcAfterFightEnded, [self])
 
 func processTime(_secondsPassed):
 	for bodypart in processingBodyparts:
@@ -311,8 +324,6 @@ func processTime(_secondsPassed):
 		if(timedBuffsDurationSeconds <= 0):
 			timedBuffs.clear()
 	
-	updateNonBattleEffects()
-	
 	for effectID in statusEffects:
 		var effect = statusEffects[effectID]
 		effect.processTime(_secondsPassed)
@@ -322,6 +333,11 @@ func processTime(_secondsPassed):
 	
 	if(lustCombatState != null):
 		lustCombatState.processTime(_secondsPassed)
+	
+	if(!bodyFluids.isEmpty()):
+		bodyFluids.drain(0.1 * _secondsPassed / 60.0)
+	
+	GM.GES.callGameExtenders(ExtendGame.pcProcessTime, [self, _secondsPassed])
 
 func hoursPassed(_howmuch):
 	var currentLust = getLust()
@@ -348,6 +364,8 @@ func hoursPassed(_howmuch):
 		intoxicationTolerance -= 0.005
 		if(intoxicationTolerance < 0.0):
 			intoxicationTolerance = 0.0
+
+	GM.GES.callGameExtenders(ExtendGame.pcHoursPassed, [self, _howmuch])
 
 func getGender():
 	return pickedGender
@@ -386,6 +404,12 @@ func setSpecies(species: Array):
 	emit_signal("stat_changed")
 
 func resetBodypartsToDefault():
+	resetBodypartsToDefaultFor(getSpecies())
+	
+func resetBodypartsToDefaultFor(speciesIds):
+	if(speciesIds is String):
+		speciesIds = [speciesIds]
+	
 	var newgender = getGender()
 	if(newgender == Gender.Male):
 		pickedFemininity = 0
@@ -394,7 +418,7 @@ func resetBodypartsToDefault():
 	if(newgender == Gender.Androgynous || newgender == Gender.Other):
 		pickedFemininity = 50
 	
-	var speciesIds = getSpecies()
+	#var speciesIds = getSpecies()
 	var myspecies = []
 	for specieID in speciesIds:
 		myspecies.append(GlobalRegistry.getSpecies(specieID))
@@ -436,8 +460,6 @@ func saveData():
 		"pickedGender": pickedGender,
 		"pronounsGender": pronounsGender,
 		"pickedSpecies": pickedSpecies,
-		"bodyMessiness": bodyMessiness,
-		"bodyFluids": bodyFluids,
 		"pickedFemininity": pickedFemininity,
 		"pickedThickness": pickedThickness,
 		"inmateType": inmateType,
@@ -462,6 +484,7 @@ func saveData():
 	data["skills"] = skillsHolder.saveData()
 	data["menstrualCycle"] = menstrualCycle.saveData()
 	data["lustCombatState"] = lustCombatState.saveData()
+	data["bodyFluids"] = bodyFluids.saveData()
 	
 	data["timedBuffs"] = saveBuffsData(timedBuffs)
 	data["timedBuffsDurationSeconds"] = timedBuffsDurationSeconds
@@ -485,8 +508,6 @@ func loadData(data):
 	pickedGender = SAVE.loadVar(data, "pickedGender", Gender.Female)
 	pronounsGender = SAVE.loadVar(data, "pronounsGender", null)
 	pickedSpecies = SAVE.loadVar(data, "pickedSpecies", ["human"])
-	bodyMessiness = SAVE.loadVar(data, "bodyMessiness", 0)
-	bodyFluids = SAVE.loadVar(data, "bodyFluids", [])
 	pickedFemininity = SAVE.loadVar(data, "pickedFemininity", 50)
 	pickedThickness = SAVE.loadVar(data, "pickedThickness", 50)
 	inmateType = SAVE.loadVar(data, "inmateType", InmateType.General)
@@ -517,6 +538,7 @@ func loadData(data):
 	skillsHolder.loadData(SAVE.loadVar(data, "skills", {}))
 	menstrualCycle.loadData(SAVE.loadVar(data, "menstrualCycle", {}))
 	lustCombatState.loadData(SAVE.loadVar(data, "lustCombatState", {}))
+	bodyFluids.loadData(SAVE.loadVar(data, "bodyFluids", {}))
 	
 	timedBuffs = loadBuffsData(SAVE.loadVar(data, "timedBuffs", []))
 	timedBuffsDurationSeconds = SAVE.loadVar(data, "timedBuffsDurationSeconds", 0)
@@ -580,16 +602,17 @@ func getBodypartTooltipInfo(_bodypartSlot):
 
 func afterSleeping():
 	addStamina(getMaxStamina())
-	addPain(-100)
+	addPain(-getPain())
 	skillsHolder.onNewDay()
 	for item in getInventory().getEquppedRestraints():
 		item.getRestraintData().resetOnNewDay()
 	
+	for statusEffectID in statusEffects:
+		statusEffects[statusEffectID].onSleeping()
+	
 	if(isPregnant() && getPregnancyProgress() <= 0.5 && RNG.chance(30)):
 		GM.main.addLogMessage("Nausea", "You wake up and feel kinda nauseous.")
 		addEffect(StatusEffect.PregnancySickness)
-		
-	updateNonBattleEffects()
 
 func afterSleepingInBed():
 	afterSleeping()
@@ -598,7 +621,17 @@ func afterRestingInBed(seconds):
 	var _hours = floor(seconds/3600.0)
 	
 	addStamina(_hours * 10)
-	updateNonBattleEffects()
+
+func afterCryopodTreatment():
+	removeEffect(StatusEffect.Wounded)
+	removeEffect(StatusEffect.StretchedPainfullyAnus)
+	removeEffect(StatusEffect.StretchedPainfullyPussy)
+	addPain(-GM.pc.getPain())
+	addStamina(GM.pc.getMaxStamina())
+
+func afterHealingGelTreatment():
+	removeEffect(StatusEffect.StretchedPainfullyAnus)
+	removeEffect(StatusEffect.StretchedPainfullyPussy)
 
 func isFullyNaked():
 	var slotsToBeFullyNaked = [InventorySlot.Body, InventorySlot.UnderwearBottom, InventorySlot.UnderwearTop]
@@ -649,65 +682,17 @@ func isInventorySlotBlocked(invslot):
 func afterEatingAtCanteen():
 	addStamina(100)
 	addPain(-20)
-	updateNonBattleEffects()
 
 func afterTakingAShower():
 	addStamina(30)
 	clearBodyFluids()
 	clearBodywritings()
 	clearTallymarks()
-	updateNonBattleEffects()
 
 func orgasmFrom(_characterID: String):
 	cumOnFloor()
 	
 	addLust(-lust)
-	updateNonBattleEffects()
-
-func cummedOnBy(characterID, sourceType = null, howMessy: int = 1):	
-	var ch = GlobalRegistry.getCharacter(characterID)
-	if(sourceType == null):
-		if(ch.getGender() == Gender.Female):
-			sourceType = BodilyFluids.FluidSource.Vagina
-		else:
-			sourceType = BodilyFluids.FluidSource.Penis
-	
-	coverBodyWithFluid(characterID, ch.getFluidType(sourceType), howMessy)
-
-func pissedOnBy(_characterID):
-	addEffect(StatusEffect.DrenchedInPiss)
-
-func coverBodyWithFluid(characterID, fluidType, howMuchLevels: int = 1):
-	bodyFluids.append([characterID, fluidType, howMuchLevels])
-	bodyMessiness += howMuchLevels
-	if(bodyMessiness < 0):
-		bodyMessiness = 0
-	if(bodyMessiness > BodilyFluids.MaxMessinessLevel):
-		bodyMessiness = BodilyFluids.MaxMessinessLevel
-	
-func clearBodyFluids():
-	bodyFluids.clear()
-	bodyMessiness = 0
-	removeEffect(StatusEffect.DrenchedInPiss)
-
-func getOutsideMessinessLevel():
-	return bodyMessiness
-
-func getOutsideMessinessFluidList():
-	var myfluids = []
-	for bodyFluidData in bodyFluids:
-		if(!myfluids.has(bodyFluidData[1])):
-			myfluids.append(bodyFluidData[1])
-	return myfluids
-
-func getPenisSize():
-	if(!hasBodypart(BodypartSlot.Penis)):
-		return 0.0
-	
-	var bodypart = getBodypart(BodypartSlot.Penis)
-	return bodypart.getLength()
-
-
 
 func getInmateNumber():
 	return inmateNumber
@@ -852,7 +837,6 @@ func addIntoxication(howmuch: float):
 		if(intoxicationTolerance > 1.0):
 			intoxicationTolerance = 1.0
 	
-	updateNonBattleEffects()
 
 func getIntoxicationLevel() -> float:
 	return intoxication
@@ -884,6 +868,22 @@ func useBestCondom():
 	var bestChance = -99.0
 	for condom in condoms:
 		if(condom.getCondomBreakChance() > bestChance):
+			bestChance = condom.getCondomBreakChance()
+			bestObject = condom
+	
+	if(bestObject != null):
+		bestObject.removeXOrDestroy(1)
+	return bestChance
+
+func useWorstCondom():
+	var condoms = getInventory().getItemsWithTag(ItemTag.Condom)
+	if(condoms.size() <= 0):
+		return null
+	
+	var bestObject = null
+	var bestChance = 100000.0
+	for condom in condoms:
+		if(condom.getCondomBreakChance() < bestChance):
 			bestChance = condom.getCondomBreakChance()
 			bestObject = condom
 	
@@ -930,20 +930,6 @@ func damageClothes():
 func isWearingPortalPanties():
 	return getInventory().hasItemIDEquipped("PortalPanties")
 
-func unequipAllRestraints():
-	for item in inventory.getEquppedRestraints():
-		if(item.isImportant()):
-			continue
-		
-		inventory.unequipItem(item)
-
-func removeAllRestraints():
-	for item in inventory.getEquppedRestraints():
-		if(item.isImportant()):
-			continue
-		
-		inventory.removeEquippedItem(item)
-
 func hasTightHoles():
 	var maxLooseness = 0.0
 	var bodypartsToCheck = [BodypartSlot.Vagina, BodypartSlot.Anus]
@@ -973,3 +959,44 @@ func personalityChangesAfterSex():
 
 func getCharacterType():
 	return CharacterType.Inmate
+
+func doPainfullyStretchHole(_bodypart, _who = "pc"):
+	if(_bodypart == BodypartSlot.Vagina && hasBodypart(_bodypart)):
+		if(hasEffect(StatusEffect.LubedUp)):
+			return
+		
+		addEffect(StatusEffect.StretchedPainfullyPussy, [1])
+		emit_signal("holePainfullyStretched", _bodypart, _who)
+	if(_bodypart == BodypartSlot.Anus && hasBodypart(_bodypart)):
+		if(hasEffect(StatusEffect.LubedUp)):
+			return
+		
+		addEffect(StatusEffect.StretchedPainfullyAnus, [1])
+		emit_signal("holePainfullyStretched", _bodypart, _who)
+
+func doWound(_who = "pc"):
+	addEffect(StatusEffect.Wounded, [1])
+	emit_signal("gotWoundedBy", _who)
+
+func getEncounterChanceModifierStaff():
+	return clamp(buffsHolder.getCustom(BuffAttribute.EncounterChanceModifierStaff) + 1.0, 0.1, 10.0)
+	
+func getEncounterChanceModifierInmates():
+	return clamp(buffsHolder.getCustom(BuffAttribute.EncounterChanceModifierInmates) + 1.0, 0.1, 10.0)
+
+func giveBirth():
+	var bornChildren = .giveBirth()
+	
+	var bornChildAmount = bornChildren.size()
+	addSkillExperience(Skill.Fertility, 90 + Util.mini(210, bornChildAmount * 10))
+	if(hasPerk(Perk.FertilityMotherOfTheYear)):
+		addEffect(StatusEffect.MaternalGlow)
+		
+		var paycheck = Util.mini(20, bornChildAmount * 2)
+		addCredits(paycheck)
+		
+		#if(GM.ui != null):
+		#	GM.ui.showHornyMessage("[center][color=#f0dd61]AlphaCorp thanks you for your compliance and hopes to continue our 'fruitful cooperation' in the future \n [b]You recieved: " +str(paycheck)+ " credits![/b][/color][/center]")
+		GM.main.addMessage("AlphaCorp has transferred "+str(paycheck)+" credits to you for being a good mother.")
+	
+	return bornChildren

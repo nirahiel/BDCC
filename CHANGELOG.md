@@ -5,6 +5,98 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+## [0.0.23] - 2023-06-13
+### Added
+- First accepted code contribution! The npc 'forget' menu got replaced with a fancy UI-based one that also allows you preview the npc or even meet them. ([Pull request by Firi](https://github.com/Alexofp/BDCC/pull/10))
+- Second accepted code contribution! Fertility skill with 10 new perks designed for mothers ^^. ([Pull request by Firi](https://github.com/Alexofp/BDCC/pull/14))
+- The final Arena battle against Avy is finished! It won't be that simple.. Because it's an entire quest! Will you become the new Grand Champion or will Avy The Unbeatable keep the throne to herself forever?
+- Lots of new Rahi scenes that train her skills. Below are all the new stuff, pages upon pages of it (This is probably the last time I focus on Rahi for an update x3)
+- Rahi's petplay is expanded with puppy training. Can take Rahi on walkies around the prison now
+- Choking punishment for Rahi. If you go too far - you might make Rahi forget one of her skills entirely.. allowing you to experience the content of that skill again
+- Rahi can join you in your bed when you go to sleep.
+- 8 morning scenes where Rahi wakes you up with sex. Can be toggled on or off
+- Exhibitionism skill for Rahi got a lot of scenes. From you training her to be more 'confident' to parading her around the station naked
+- Cuddle reward where you cuddle Rahi. Has a few sex scenes and also ability to collect Rahi's milk with breast pumps
+- Rahi pregnancy content. 2 scenes, one for the first time and one repeatable. Happens when you approach her when she is ready to give birth (you will be notified).
+- New perk for the BDSM skill that really rewards perfect hits during the struggling minigame
+- Learned perks can now be toggled off and on at any point
+- Slutwall. Slut. Wall.
+- The procedural sex now has more poses for the penetrative sex. Allfours/Standing/Missionary/Full-nelson for fucking someone and Cowgirl/Reverse cowgirl for riding someone. A random pose is chosen but you can switch them on the fly
+- You can now meet pregnant procedural npcs and help them give birth
+- Developer commentary for scenes. If you enable it in the options the \[DC] button will now appear for scenes that have commentary written for them. The commentary are little snippets of text that give you more insight about how I write
+- Imagepacks now support layered images, ability to define art for procedural npcs and also ability to attach art to any scene
+
+### Changed
+- If you manage to resist Npc's attempts of putting bdsm gear on you during sex, they will eventually give up
+- Names for breast sizes and also milk amount got adjusted to be slightly more realistic. Slightly.
+- New imagepacks are sorted to be first now
+
+### Fixed
+- Npcs shouldn't be able to give birth mid-scene anymore
+- Npcs shouldn't be processed twice when you meet them anymore
+- More bugs that I don't remember..
+
+## [0.0.22bugfix1] - 2023-04-19
+### Added
+- A few petplay scenes with Rahi
+- Translator can now translate buttons and their descriptions
+
+### Fixed
+- The issue that made Tavi's main quest stuck after getting the drugs/door code
+- Npc's status effects are now being processed too. Fixes Rahi's sore nipples not going away
+
+## [0.0.22] - 2023-04-13
+### Added
+- Rahi's content got expanded into a full little story line. At least 200 pages/70k words of scenes (a novel worth of text) all about the brown kitty. It's fully completable from start to the end but the middle part is still missing some content. Since the part 1. This took all the time
+- 4 'intro' story scenes and 8 main story scenes that will reveal why Rahi is the way she is. 2 endings
+- Give Rahi tasks, reward or punish her, train Rahi's skills to make her better at various lewd activities. For now I consider the dominance and anal skills to be mostly complete but the others have some fun things to do too. This will be the focus of part 2
+- Built-in auto translator. A very experimental feature. Don't expect to work well or work at all. Doesn't translate the buttons. Doesn't work in web builds
+- Computer hacking minigame now has a built-in tutorial that explains you what to do. It will also spoil you the command if you're really stuck. Debug menu now has the option to skip this minigame
+- You can now use strapons if you have a chastity cage. The cage will be hidden because of how the skeleton works.
+
+### Fixed
+- Crash when you pick the drink options during chastity content
+
+## [0.0.21] - 2023-02-24
+### Added
+- Tavi's route is extended. ~100 pages of text. Help her try to contact the syndicate, find out more about her backstory. And more.
+- A semi-realistic computer hacking minigame that can be encountered during Tavi's content.
+- Get an ability to experience wooden horse torture during Tavi's content
+- A little encounter with a nurse android named Nur-A
+- Cum economy update! The way fluids are handled got heavily refactored. Collect fluids using a plastic bottle, a breast pump or by keeping used condoms. You can drink them or throw at your enemies using condoms. All of the interactions will have different effects depending on the fluids involved.
+- The selling price of a plastic bottle depends on the fluids inside it.
+- Breast pump. Allows you to milk your breasts. Breast pump mk2, the advanced version, milks you passively when worn.
+- A perk that allows you to keep used condoms after procedural sex or written scenes if they were involved.
+- All strapons now can be supplied with fluids. They will automatically 'cum' using these fluids when the sub cums.
+- The strapons that npcs put on can have cum lube in it. Or real cum with a very small chance
+- Horsecock dildo toy that can bought from The Announcer or by finding it during Tavi's content. Can be supplied with fluids that will be automatically 'injected' inside you when you ride it
+- Procedural sex now supports stocks. Added a few encounters into the stocks punishment that triggers them.
+- Npcs that like bodywritings might add a tallymark on you after each load. The lust damage from the perk got capped at 50%
+- Built-in Mod manager. Can be enabled in the options. Allows you to manage your mods.
+- Mod browser. Can be opened from the mod manager. Allows you to download mods straight from the game. I curate the mod list personally
+- The BDCC.pck file now automatically gets generated and updated on Android when needed. First-time launch might be slower because of that
+- A few new perks. Melee weapons damage, instant restraint escape, fluid experimenter
+- The struggling minigame is different if you're blindfolded.
+- Scene converter got a major overhaul. You can now write branching, add code that runs when picking an action and more without leaving google docs. Scene converter can now 'preview' scenes. You can even pick which savefile you wanna preview the scene on.
+- Kait got her portrait
+- Skills button only gets 'highlighted' with \[!\] if you can unlock new perks in that skill tree
+
+## [0.0.20] - 2023-01-10
+### Added
+- Sex animations! Almost every lewd scene now includes an animation for the dolls. Procedural sex included
+- Struggling out of restraints is now animated
+- Forced male chastity content. Experience what it's like to wear permanent chastity cage over 7 lewd scenes (28k words/76 pages) with Eliza and optional cameos of 5 other characters. You will have a huge choice at the end of this little storyline. Scenes trigger every 5 days
+- Strapons. Strapons can now be used inside the procedural sex by you or npcs. Strapons can be bought from The Announcer
+- Procedural npcs now drop loot (oops, I forgot that when coding them)
+- Encounter settings have been greately expanded. You can now choose the distribution of genders, species and restrict sertain activities from happening to you during procedural sex
+- You can get wounded or have your holes painfull stretched during rough activities inside the procedural sex. These status effects won't go away until you get yourself healed by Eliza or by sleeping (sleeping won't help if you got wounded twice in a row)
+- Can ask Eliza to heal you inside the cryopod
+- Buffs tab inside the skills menu. Shows what buffs your character currently has and their source (equipped item, status effect or perk). Useful to see if the perks are actually working
+- You can choose to keep the restraints on the procedural npc if you won the fight
+- Mods can extend the game's core functions with GameExtenders. GameExtenders can subscribe to some events like player's updates and run code. Should lessen the need to override the core files of the game inside mods. Still an experimental feature
+
+### Changed
+- The function that updates player's status effects shouldn't run multiple times in a row anymore. General optimization
 
 ## [0.0.19] - 2022-12-05
 ### Added
@@ -175,7 +267,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Turn-based fighting
 - Initial player customization
 
-[Unreleased]: https://github.com/Alexofp/BDCC/compare/0.0.19...main
+[Unreleased]: https://github.com/Alexofp/BDCC/compare/0.0.23...main
+[0.0.23]: https://github.com/Alexofp/BDCC/compare/0.0.22bugfix1...0.0.23
+[0.0.22bugfix1]: https://github.com/Alexofp/BDCC/compare/0.0.22...0.0.22bugfix1
+[0.0.22]: https://github.com/Alexofp/BDCC/compare/0.0.21...0.0.22
+[0.0.21]: https://github.com/Alexofp/BDCC/compare/0.0.20...0.0.21
+[0.0.20]: https://github.com/Alexofp/BDCC/compare/0.0.19...0.0.20
 [0.0.19]: https://github.com/Alexofp/BDCC/compare/0.0.18...0.0.19
 [0.0.18]: https://github.com/Alexofp/BDCC/compare/0.0.17...0.0.18
 [0.0.17]: https://github.com/Alexofp/BDCC/compare/0.0.16...0.0.17

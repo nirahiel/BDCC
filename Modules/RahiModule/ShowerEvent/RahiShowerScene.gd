@@ -2,14 +2,31 @@ extends "res://Scenes/SceneBase.gd"
 
 var usedCondom = false
 var condomBroke = false
+var isSlavery = false
 
 func _init():
 	sceneID = "RahiShowerScene"
 
+func _initScene(_args = []):
+	if(_args != null && _args.size() > 0):
+		if(_args[0] == "slavery"):
+			isSlavery = true
+
 func _run():
 	if(state == ""):
+		if(isSlavery):
+			aimCameraAndSetLocName("main_shower1")
+			
+			saynn("You tell Rahi that it's time to take a shower. She nods and follows you to the showers.")
+			
+			saynn("The feline strips her uniform in the undressing room and gets under one of the shower heads before twisting the nob that makes the water run.")
+		
 		addCharacter("rahi", ["naked"])
-		GM.main.playAnimation(StageScene.Duo, "stand", {npc="rahi", hard=true, npcAction="stand", exposedBodyparts=[BodypartSlot.Body, BodypartSlot.Penis, BodypartSlot.Breasts, BodypartSlot.Vagina, BodypartSlot.Anus], npcExposedBodyparts=[BodypartSlot.Body, BodypartSlot.Penis, BodypartSlot.Breasts, BodypartSlot.Vagina, BodypartSlot.Anus]})
+		playAnimation(StageScene.Duo, "stand", {
+			npc="rahi", pc="pc", 
+			bodyState={naked=true,},
+			npcBodyState={naked=true},
+		})
 		
 	if(state == ""):
 		saynn("You watch the familiar kitty that is standing under the shower, completely naked. She is taking her sweet time, washing herself, her hand holding a piece of soap that she uses on her hair. Her body is directed away from you but it still presents you with a nice view. Her wet fur now shows just how slim her curves are, something that is must have for an agile kitty. She is humming some tune to herself while slowly swaying her hips.")
@@ -19,9 +36,20 @@ func _run():
 		addButton("Intervene", "Announce your presence", "intervene")
 
 	if(state == "intervene"):
+		playAnimation(StageScene.SexStanding, "tease", {
+			npc="rahi", pc="pc", 
+			bodyState={naked=true,},
+			npcBodyState={naked=true},
+		})
+		
 		saynn("You get under the shower head that is next to hers and wash yourself for a bit. Then you clear your throat loudly. The feline gasps, her ears direct themselves at you, shortly followed by her gaze.")
-
-		saynn("[say=rahi]Oh, hello there..[/say]")
+		
+		if(isSlavery):
+			saynn("[say=pc]I thought you hated water.[/say]")
+			
+			saynn("[say=rahi]Showers are different.. She can't drown here..")
+		else:
+			saynn("[say=rahi]Oh, hello there..[/say]")
 
 		saynn("She keeps washing herself but her hand motions are more shy. She quickly rubs her breasts and then moves on to focusing on washing her belly and lower.")
 
@@ -69,6 +97,44 @@ func _run():
 		addButton("Just kiss", "Embrace the intimacy of the moment", "just_kiss")
 		addButtonWithChecks("Vaginal", "Ask if it’s okay first (It’s gonna be rough)", "vaginal", [], [ButtonChecks.HasReachablePenis])
 		addButton("Lick her out", "Taste the kitty (Gonna be somewhat rough for her)", "lick_her_out")
+		if(isSlavery && (getCharacter("rahi").hasEffect(StatusEffect.HasCumInsideVagina) || getCharacter("rahi").hasEffect(StatusEffect.HasCumInsideAnus))):
+			addButton("Clean inside", "Remove any cum or other fluids from inside Rahi's holes", "clean_rahi_inside")
+		elif(isSlavery):
+			addDisabledButton("Clean inside", "Rahi doesn't have any cum or other fluids inside her holes")
+
+	if(state == "clean_rahi_inside"):
+		saynn("[say=pc]Let's clean you inside too, kitty.[/say]")
+
+		saynn("[say=rahi]Meow?..[/say]")
+
+		saynn("Without explaining much, you place both of your hands on the kitty's buttcheeks and grope them slightly. You can hear subtle purring coming from her while she leans back into you.")
+
+		saynn("After some caressing, you suddenly spread her butt. Kitty meows again while you put both of her pleasure holes on display. Her little pink tailhole in particular, Rahi tries to clench but she can't make it fully close while your hands are there. Her pussy looks spread too, the needy wet hole is obeying your touch.")
+
+		saynn("[say=rahi]H-hey..[/say]")
+
+		var hasCumInPussy = getCharacter("rahi").hasEffect(StatusEffect.HasCumInsideVagina)
+		var hasCumInAnus = getCharacter("rahi").hasEffect(StatusEffect.HasCumInsideAnus)
+		if (hasCumInPussy && hasCumInAnus):
+			saynn("Very soon lewd stuff begins to leak out of both of her holes. {rahi.VaginaContents} leaks out of her pussy slit, dripping down her thighs before getting washed away by the water. Her butt is dripping {rahi.anusContents} onto the floor.")
+
+		elif (hasCumInPussy):
+			saynn("Her butt doesn't seem to be stuffed but her pussy is. {rahi.VaginaContents} begins to leak out of it, dripping down her thighs before getting washed away by the water.")
+
+		else:
+			saynn("Strangely enough, her pussy isn't stuffed with anything but her butt is. Very soon her tailhole begins to leak {rahi.anusContents} onto the floor before getting washed away into the drain.")
+
+		saynn("The feline holds your hands with her paws but she doesn't try to pry them off.")
+
+		saynn("[say=rahi]This is embarrassing.. a bit..[/say]")
+
+		saynn("[say=pc]Relax, pussy cat. Well, no, you should try to push it out actually. Do it.[/say]")
+
+		saynn("The feline blushes deeply but she seems to be obeying, her body visible tensing up while more and more lewd fluids continue to leak out of her. Her raised tail brushing against your {pc.masc} chest.")
+
+		saynn("You wait until she stops dripping before letting go of her buttchecks. You give her shoulder a little kiss and prepare to leave.")
+
+		addButton("Continue", "See what happens next", "cleanholesandend")
 
 	if(state == "just_kiss"):
 		saynn("You put both your hands on the feline’s hips and gently turn her around until she is facing you. You’re getting closer and closer, your foreheads softly bump together, her paws explore your {pc.masc} body, your {pc.breasts}..")
@@ -101,14 +167,22 @@ func _run():
 		saynn("[say=pc]I don’t mind it.[/say]")
 
 		saynn("You finally stop hugging and quickly finish washing each other. You turn off the water and the kitten gives you the last little kiss on your cheek before leaving you to go get dried up and dress.")
-
-		saynn("[say=rahi]See you around..[/say]")
+		
+		if(isSlavery):
+			saynn("[say=rahi]Let's go back..[/say]")
+		else:
+			saynn("[say=rahi]See you around..[/say]")
 
 		# (scene ends)
 		addButton("Continue", "That's nice", "endthescene")
 
 	if(state == "vaginal"):
 		# (needs an exposed dick)
+		playAnimation(StageScene.SexStanding, "tease", {
+			npc="rahi", pc="pc", 
+			bodyState={naked=true,hard=true,},
+			npcBodyState={naked=true},
+		})
 
 		saynn("You begin gently moving your {pc.masc} hips back and forth, your {pc.cock} is sliding between the kitten's legs and rubbing against her cute pink slit, coating your member with her wetness that quickly gets washed away.")
 
@@ -126,6 +200,12 @@ func _run():
 		addButtonWithChecks("Use condom", "No need to risk getting her pregnant", "use_condom", [], [ButtonChecks.HasCondoms])
 
 	if(state == "fucking"):
+		playAnimation(StageScene.SexStanding, "sex", {
+			npc="rahi", pc="pc", 
+			bodyState={naked=true,hard=true,condom=usedCondom},
+			npcBodyState={naked=true},
+		})
+		
 		saynn("Suddenly you press her chest against a wall, one your hand is on the back of her neck, pinning the feline into the cold concrete while another forcibly spreads her legs, giving you full access to her pink pussy. She lets out a gasp and tests you, already trying to break free but your growling and a smack on the ass shows kitty her place.")
 
 		saynn("[say=pc]You’re gonna take it and you’re gonna love it, cat.[/say]")
@@ -160,6 +240,12 @@ func _run():
 			addButton("Cum inside", "Fill that condom up", "cum_inside")
 
 	if(state == "cum_inside"):
+		playAnimation(StageScene.SexStanding, "fast", {
+			npc="rahi", pc="pc", 
+			bodyState={naked=true,hard=true,condom=usedCondom},
+			npcBodyState={naked=true},
+		})
+		
 		saynn("Like some kind of animal, you keep ravaging her poor kitty cunt, it only takes a few more thrusts before the feline lets out a series of loud long moans, her pussy tightens around your cock and squirts with her female juices, she is cumming! Her feline body shakes and tries to squirm but your grasp is hard, you keep her body still as you keep fucking her slit even through her orgasm. Any pain she might be experiencing now just amplifies her climax instead, the contrast makes it so much more pleasurable.")
 
 		saynn("[say=rahi]Ah-h!.. Y-yes!.. D-don’t stop![/say]")
@@ -216,6 +302,12 @@ func _run():
 		addButton("Continue", "That's nice", "endthescene")
 
 	if(state == "lick_her_out"):
+		playAnimation(StageScene.SexOral, "start", {
+			pc="rahi", npc="pc", 
+			bodyState={naked=true,},
+			npcBodyState={naked=true},
+		})
+		
 		saynn("You put your hand on her shoulder and turn her around until she is facing you before embracing her again. She can’t hide her blushing face anymore, you give her lips a swift lick and she mewls back. Your hand slides down from the kitty’s shoulder and follows her slim curves, it cups her perky breasts and then explores lower, brushing over her belly and then sliding between her legs, finding the little sensitive bean that is her cilt.")
 
 		saynn("Her breathing changes to be more deep, she closes her legs around your hand, preventing you from exploring her further, her own paws are pushed into your chest. You gently bite on her ear and then whisper to her.")
@@ -238,11 +330,17 @@ func _run():
 
 		saynn("[say=rahi]..maybe[/say]")
 
-		saynn("You chuckle and then replace your knees with your hand, your digits land on her snatch and spread the petals open, showing how wet and juicy the kitty is inside. Your big thumb is teasing her clit again, doing little circular motions, they make the feline moan louder and try to close her legs again. But after you give her thighs another smack, she is spreading her legs open for you again and stands still.")
+		saynn("You chuckle and then replace your knee with your hand, your digits land on her snatch and spread the petals open, showing how wet and juicy the kitty is inside. Your big thumb is teasing her clit again, doing little circular motions, they make the feline moan louder and try to close her legs again. But after you give her thighs another smack, she is spreading her legs open for you again and stands still.")
 
 		addButton("Crouch", "Get down to business", "crouch")
 
 	if(state == "crouch"):
+		playAnimation(StageScene.SexOral, "lick", {
+			pc="rahi", npc="pc", 
+			bodyState={naked=true,},
+			npcBodyState={naked=true},
+		})
+		
 		saynn("Seeing that the kitty is not gonna resist anymore, you grab her by the chin and force her to look at you.")
 
 		saynn("[say=pc]Don’t be quiet, I wanna hear you moan. Got it?[/say]")
@@ -302,6 +400,10 @@ func _react(_action: String, _args):
 	if(_action in ["make_her_cum", "use_condom", "just_kiss", "no_condom"]):
 		processTime(RNG.randi_range(20, 40)*60)
 	
+	if(_action == "rub_her_back"):
+		GM.pc.afterTakingAShower()
+		getCharacter("rahi").afterTakingAShower()
+	
 	if(_action == "use_condom"):
 		usedCondom = true
 		setState("fucking")
@@ -314,21 +416,28 @@ func _react(_action: String, _args):
 
 	if(_action == "make_her_cum"):
 		GM.pc.addSkillExperience(Skill.SexSlave, 30, "rahi_showerlick")
+		getModule("RahiModule").advanceSkill("rahiSkillSex")
 
 	if(_action == "cum_inside"):
+		getModule("RahiModule").advanceSkill("rahiSkillSex")
 		if(usedCondom):
 			var chance = GM.pc.useBestCondom()
-			if(chance != null && RNG.chance(chance)):
-				condomBroke = true
+			condomBroke = GM.pc.shouldCondomBreakWhenFucking("rahi", chance)
 		
 		if(!usedCondom || (usedCondom && condomBroke)):
 			getCharacter("rahi").cummedInVaginaBy("pc")
 			GM.pc.addSkillExperience(Skill.SexSlave, 30, "rahi_showerfuck")
 		else:
 			GM.pc.addSkillExperience(Skill.SexSlave, 50, "rahi_showerfuck")
+			addFilledCondomToLootIfPerk(getCharacter("pc").createFilledCondom())
 		GM.pc.orgasmFrom("rahi")
 
 	if(_action == "endthescene"):
+		endScene()
+		return
+	
+	if(_action == "cleanholesandend"):
+		getCharacter("rahi").clearOrificeFluidsCheckBlocked()
 		endScene()
 		return
 	
@@ -339,6 +448,7 @@ func saveData():
 	
 	data["usedCondom"] = usedCondom
 	data["condomBroke"] = condomBroke
+	data["isSlavery"] = isSlavery
 	
 	return data
 	
@@ -347,3 +457,4 @@ func loadData(data):
 	
 	usedCondom = SAVE.loadVar(data, "usedCondom", false)
 	condomBroke = SAVE.loadVar(data, "condomBroke", false)
+	isSlavery = SAVE.loadVar(data, "isSlavery", false)

@@ -1,4 +1,4 @@
-extends Node
+extends Control
 class_name MainScene
 
 onready var gameUI = $GameUI
@@ -12,11 +12,15 @@ var timeOfDay = 6*60*60 # seconds since 00:00
 var flags = {}
 var flagsCache = null
 var moduleFlags = {}
-var playerScene = preload("res://Player/Player.tscn")
+var playerScene = preload("res://Player/Player.gd")
+var overriddenPlayerScene = preload("res://Player/OverriddenPlayer.gd")
 var overridenPC
 var originalPC
 var roomMemories = {}
+var lootedRooms = {}
 var rollbacker:Rollbacker
+var encounterSettings:EncounterSettings
+var currentlyTestingScene = false
 
 var staticCharacters = {}
 var charactersToUpdate = {}
@@ -29,6 +33,7 @@ signal saveLoadingFinished
 func _init():
 	rollbacker = Rollbacker.new()
 	flagsCache = Flag.getFlags()
+	encounterSettings = EncounterSettings.new()
 
 func overridePC():
 	if(overridenPC != null):
@@ -37,7 +42,7 @@ func overridePC():
 	
 	Util.remove_all_signals(originalPC)
 			
-	var newpc = playerScene.instance()
+	var newpc = overriddenPlayerScene.new()
 	overridenPC = newpc
 	GM.pc = newpc
 	connectSignalsToPC(newpc)
@@ -69,6 +74,8 @@ func connectSignalsToPC(who):
 	_s = who.connect("exchangedCumDuringRubbing", self, "_on_Player_exchangedCumDuringRubbing")
 	_s = who.connect("skillLevelChanged", self, "_on_Player_skillLevelChanged")
 	_s = who.connect("stat_changed", $GameUI, "_on_Player_stat_changed")
+	_s = who.connect("holePainfullyStretched", self, "_on_Player_holePinafullyStretched")
+	_s = who.connect("gotWoundedBy", self, "_on_Player_gotWoundedBy")
 
 func _exit_tree():
 	GM.main = null
@@ -94,8 +101,8 @@ func getCharacter(charID):
 func getCharacters():
 	return staticCharacters
 
-func addDynamicCharacter(character):
-	if(!(character is DynamicCharacter)):
+func addDynamicCharacter(character, printDebug = true):
+	if(!(character.isDynamicCharacter())):
 		assert(false, "addDynamicCharacter() Received a non-dynamic character")
 		
 	var newCharID = character.getID()
@@ -107,19 +114,25 @@ func addDynamicCharacter(character):
 	
 	dynamicCharacters[newCharID] = character
 	dynamicCharactersNode.add_child(character)
+	if(printDebug):
+		Log.print("addDynamicCharacter(): Adding "+str(newCharID)+" character "+Util.getStackFunction())
 		
-func removeDynamicCharacter(characterID):
-	if(characterID is DynamicCharacter):
+func removeDynamicCharacter(characterID, printDebug = true):
+	if(!(characterID is String)):
 		characterID = characterID.getID()
 	
 	if(dynamicCharacters.has(characterID)):
+		if(printDebug):
+			Log.print("removeDynamicCharacter(): Removing "+str(characterID)+" character")
 		removeDynamicCharacterFromAllPools(characterID)
 		
 		dynamicCharacters[characterID].queue_free()
 		dynamicCharacters.erase(characterID)
+	else:
+		Log.print("removeDynamicCharacter(): Tried to remove "+str(characterID)+" character but it doesn't exist")
 
 func addDynamicCharacterToPool(characterID, poolID:String):
-	if(characterID is DynamicCharacter):
+	if(!(characterID is String)):
 		characterID = characterID.getID()
 	
 	if(!dynamicCharacters.has(characterID)):
@@ -132,7 +145,7 @@ func addDynamicCharacterToPool(characterID, poolID:String):
 	return true
 
 func removeDynamicCharacterFromPool(characterID, poolID:String):
-	if(characterID is DynamicCharacter):
+	if(!(characterID is String)):
 		characterID = characterID.getID()
 	
 	if(!dynamicCharactersPools.has(poolID)):
@@ -144,7 +157,7 @@ func removeDynamicCharacterFromPool(characterID, poolID:String):
 	return true
 
 func removeDynamicCharacterFromAllPools(characterID):
-	if(characterID is DynamicCharacter):
+	if(!(characterID is String)):
 		characterID = characterID.getID()
 	
 	for poolID in dynamicCharactersPools:
@@ -170,7 +183,7 @@ func getDynamicCharactersPools():
 func _ready():
 	createStaticCharacters()
 	
-	var pc = playerScene.instance()
+	var pc = playerScene.new()
 	originalPC = pc
 	GM.pc = pc
 	connectSignalsToPC(pc)
@@ -188,6 +201,7 @@ func _ready():
 	Console.addCommand("clearflag", self, "consoleClearFlag", ["flagID"], "Resets the game flag, be very careful")
 	Console.addCommand("setmoduleflag", self, "consoleSetModuleFlagBool", ["moduleID", "flagID", "trueOrFalse"], "Changes the game flag, be very careful")
 	Console.addCommand("clearmoduleflag", self, "consoleClearModuleFlag", ["moduleID", "flagID"], "Resets the game flag, be very careful")
+	Console.addCommand("ae", self, "consoleAnimationEditor", [], "Animation editor")
 	applyAllWorldEdits()
 	
 func startNewGame():
@@ -199,9 +213,31 @@ func startNewGame():
 	#runScene("FightScene", ["testchar"])
 	#runScene("FightScene", ["tavi"])
 
-func runScene(id, _args = []):
+func getNewUniqueSceneID(blockedIDS=[]) -> int:
+	var takenIDs = {}
+	for someID in blockedIDS:
+		if(someID >= 0):
+			takenIDs[someID] = true
+	
+	for scene in sceneStack:
+		if(scene.uniqueSceneID >= 0):
+			takenIDs[scene.uniqueSceneID] = true
+		if(scene.parentSceneUniqueID >= 0):
+			takenIDs[scene.parentSceneUniqueID] = true
+	
+	var result:int = 0
+	while(true):
+		if(!takenIDs.has(result)):
+			return result
+		result += 1
+	return result
+
+func runScene(id, _args = [], parentSceneUniqueID = -1):
 	var scene = GlobalRegistry.createScene(id)
-	assert(scene != null, "SCENE WITH ID "+str(id)+" IS NOT FOUND")
+	scene.uniqueSceneID = getNewUniqueSceneID([parentSceneUniqueID])
+	if(parentSceneUniqueID >= 0):
+		scene.parentSceneUniqueID = parentSceneUniqueID
+	assert(scene != null, "SCENE WITH ID "+str(id)+" IS NOT FOUND. MAKE SURE IT WAS REGISTERED INSIDE THE MODULE.")
 	add_child(scene)
 	sceneStack.append(scene)
 	print("Starting scene "+id)
@@ -212,13 +248,25 @@ func runScene(id, _args = []):
 
 func removeScene(scene, args = []):
 	if(sceneStack.has(scene)):
-		if(scene == sceneStack.back()):
+		if(true):#scene == sceneStack.back() || true):
+			var isCurrentScene = (scene == sceneStack.back())
+			#var previousSceneIndex = sceneStack.find(scene) - 1
+			var savedParentSceneID = scene.parentSceneUniqueID
 			var savedTag = scene.sceneTag
+			
 			sceneStack.erase(scene)
-			if(sceneStack.size() > 0):
-				sceneStack.back().react_scene_end(savedTag, args)
-			#if(sceneStack.size() > 0):
-			#	sceneStack.back().run()
+			
+			var parentScene = getSceneByUniqueID(savedParentSceneID)
+			if(parentScene != null):
+				parentScene.react_scene_end(savedTag, args)
+			#else:
+				## This is not ideal but it's required to refresh stuff like portraits (not anymore)
+				#if(previousSceneIndex < sceneStack.size() && previousSceneIndex >= 0):
+				#	sceneStack[previousSceneIndex].react_scene_end(savedTag, args)
+			
+			if(isCurrentScene && sceneStack.back() != null):
+				sceneStack.back().updateCharacter()
+				runCurrentScene()
 		else:
 			sceneStack.erase(scene)
 	
@@ -229,6 +277,14 @@ func removeScene(scene, args = []):
 		gameUI.say("Error: no more scenes in the scenestack. Please let the developer know")
 		return
 
+func getSceneByUniqueID(uID):
+	if(uID < 0):
+		return null
+	for scene in sceneStack:
+		if(scene.uniqueSceneID == uID):
+			return scene
+	return null
+
 func getCurrentScene():
 	if(sceneStack.size() > 0):
 		return sceneStack.back()
@@ -238,6 +294,11 @@ func endCurrentScene():
 	var currentScene = getCurrentScene()
 	if(currentScene != null):
 		currentScene.endScene()
+
+func clearSceneStack():
+	for scene in sceneStack:
+		scene.queue_free()
+	sceneStack = []
 
 func _on_GameUI_on_option_button(method, args):
 	pickOption(method, args)
@@ -269,12 +330,14 @@ func runCurrentScene():
 				GM.ui.say(message)
 				GM.ui.say("\n")
 			GM.ui.say("[/i][/center]\n")
+		GM.ui.translateText()
 	updateStuff()
 
 func reRun():
 	runCurrentScene()
 
 func loadingSavefileFinished():
+	charactersToUpdate.clear()
 	for charID in getCharacters():
 		var character = getCharacter(charID)
 		character.checkOldWayOfUpdating(currentDay, timeOfDay)
@@ -300,10 +363,6 @@ func applyWorldEdit(id):
 		worldEdits[id].apply(GM.world)
 
 func canSave():
-	for scene in sceneStack:
-		if(!scene.canSave()):
-			return false
-	
 	return true
 
 func supportsBattleTurns():
@@ -331,8 +390,11 @@ func saveData():
 	data["ChildSystem"] = GM.CS.saveData()
 	data["logMessages"] = logMessages
 	data["roomMemories"] = roomMemories
+	data["lootedRooms"] = lootedRooms
 	data["world"] = GM.world.saveData()
 	data["dynamicCharactersPools"] = dynamicCharactersPools
+	data["encounterSettings"] = encounterSettings.saveData()
+	data["gameExtenders"] = GM.GES.saveData()
 	
 	data["scenes"] = []
 	for scene in sceneStack:
@@ -357,7 +419,10 @@ func loadData(data):
 	GM.CS.loadData(SAVE.loadVar(data, "ChildSystem", {}))
 	logMessages = SAVE.loadVar(data, "logMessages", [])
 	roomMemories = SAVE.loadVar(data, "roomMemories", {})
+	lootedRooms = SAVE.loadVar(data, "lootedRooms", {})
 	dynamicCharactersPools = SAVE.loadVar(data, "dynamicCharactersPools", {})
+	encounterSettings.loadData(SAVE.loadVar(data, "encounterSettings", {}))
+	GM.GES.loadData(SAVE.loadVar(data, "gameExtenders", {}))
 	
 	var scenes = SAVE.loadVar(data, "scenes", [])
 	
@@ -376,6 +441,9 @@ func loadData(data):
 		
 		#scene.initScene(_args)
 		scene.loadData(SAVE.loadVar(sceneData, "sceneData", {}))
+		if(scene.uniqueSceneID < 0):
+			scene.uniqueSceneID = getNewUniqueSceneID()
+			scene.parentSceneUniqueID = scene.uniqueSceneID - 1 # Preserves compatability with old saves
 		
 	GM.ui.recreateWorld()
 	GM.world.loadData(SAVE.loadVar(data, "world", {}))
@@ -383,12 +451,17 @@ func loadData(data):
 func saveCharactersData():
 	var data = {}
 	for characterID in staticCharacters:
-		data[characterID] = staticCharacters[characterID].saveData()
+		var character = staticCharacters[characterID]
+		if(character.disableSerialization):
+			continue
+		data[characterID] = character.saveData()
 	return data
 	
 func loadCharactersData(data):
 	for characterID in staticCharacters:
 		var character = staticCharacters[characterID]
+		if(character.disableSerialization):
+			continue
 		character.loadData(SAVE.loadVar(data, characterID, {}))
 	
 func saveDynamicCharactersData():
@@ -410,7 +483,7 @@ func loadDynamicCharactersData(data):
 		if(charType == "dynamic"):
 			var newDynamicChar = DynamicCharacter.new()
 			newDynamicChar.id = characterID
-			addDynamicCharacter(newDynamicChar)
+			addDynamicCharacter(newDynamicChar, false)
 			newDynamicChar.loadData(SAVE.loadVar(charData, "data", {}))
 		else:
 			Log.printerr("loadDynamicCharactersData() Trying to load a non-dynamic character with id "+str(characterID))
@@ -438,6 +511,8 @@ func stopProcessingUnusedCharacters():
 			charactersToUpdate.erase(charID)
 			if(character != null):
 				character.onStoppedProcessing()
+		elif(character != null && !characterIsVisible(charID)):
+			character.updateNonBattleEffects()
 
 func processTime(_seconds):
 	_seconds = int(round(_seconds))
@@ -477,7 +552,8 @@ func hoursPassed(howMuch):
 	
 	for characterID in charactersToUpdate:
 		var character = getCharacter(characterID)
-		character.hoursPassed(howMuch)
+		if(character != null):
+			character.hoursPassed(howMuch)
 
 func processTimeUntil(newseconds):
 	if(timeOfDay >= newseconds):
@@ -522,6 +598,9 @@ func getTime():
 
 func getDays():
 	return currentDay
+
+func getTimeInGlobalSeconds():
+	return int(currentDay * 24 * 60 * 60) + int(timeOfDay)
 
 func setFlag(flagID, value):
 	# Handling "ModuleID.FlagID" here
@@ -646,7 +725,8 @@ func _on_Player_levelChanged():
 
 func _on_Player_skillLevelChanged(_skillID):
 	if(GM.ui):
-		GM.ui.makeSkillsButtonFlash()
+		if(GM.pc.getSkillsHolder().canUnlockAnyPerkInSkill(_skillID)):
+			GM.ui.makeSkillsButtonFlash()
 		
 		var skill: SkillBase = GM.pc.getSkillsHolder().getSkill(_skillID)
 		
@@ -658,6 +738,15 @@ func _on_Player_orificeBecomeMoreLoose(orificeName, _newvalue, _oldvalue):
 
 func _on_Player_exchangedCumDuringRubbing(senderName, receiverName):
 	addMessage(receiverName + " stole some cum from "+senderName+" during tribbing")
+
+func _on_Player_holePinafullyStretched(bodypart, _who):
+	if(bodypart == BodypartSlot.Vagina):
+		addMessage("OW! Your pussy [b]hurts[/b]..")
+	if(bodypart == BodypartSlot.Anus):
+		addMessage("OW! Your anus [b]hurts[/b]..")
+
+func _on_Player_gotWoundedBy(_who):
+	addMessage("OW! That [b]really[/b] hurt..")
 
 func getRandomSceneFor(sceneType):
 	var resultScenes = []
@@ -695,9 +784,13 @@ func getLogMessages():
 func clearLog():
 	logMessages.clear()
 
-func playAnimation(sceneID, actionID, args = []):
+func playAnimation(sceneID, actionID, args = {}):
 	if(GM.ui != null):
 		GM.ui.getStage3d().play(sceneID, actionID, args)
+
+func playAnimationForceReset(sceneID, actionID, args = {}):
+	if(GM.ui != null):
+		GM.ui.getStage3d().play(sceneID, actionID, args, false, true)
 
 func updateSubAnims():
 	if(GM.ui != null):
@@ -864,6 +957,10 @@ func getDebugActions():
 			"id": "openConsole",
 			"name": "Open console",
 		},
+		{
+			"id": "animBrowser",
+			"name": "Animation browser",
+		},
 	]
 
 func doDebugAction(id, args = {}):
@@ -927,6 +1024,9 @@ func doDebugAction(id, args = {}):
 		
 	if(id == "openConsole"):
 		Console.toggleConsole()
+	
+	if(id == "animBrowser"):
+		runScene("SimpleAnimPlayerScene")
 
 func consoleSetFlagBool(flagID, valuestr):
 	var value = false
@@ -979,8 +1079,64 @@ func startUpdatingCharacter(charID):
 	if(!charactersToUpdate.has(charID)):
 		charactersToUpdate[charID] = true
 		print("BEGAN PROCESSING "+str(charID))
-		getCharacter(charID).processUntilTime(currentDay, timeOfDay)
+		var character = getCharacter(charID)
+		if(character != null):
+			character.processUntilTime(currentDay, timeOfDay)
+			character.updateNonBattleEffects()
+	else:
+		var character = getCharacter(charID)
+		if(character != null):
+			character.updateNonBattleEffects()
 
 func generateCharacterID(beginPart = "dynamicnpc"):
 	var numID = GlobalRegistry.generateNPCUniqueID()
 	return beginPart+str(numID)
+
+func getEncounterSettings() -> EncounterSettings:
+	return encounterSettings
+
+func canLootRoom(roomID):
+	var room = GM.world.getRoomByID(roomID)
+	if(room == null):
+		return false
+	
+	if(!room.lootable):
+		return false
+	
+	if(isRoomLooted(roomID)):
+		if(room.lootEveryXDays > 0 && getDays() >= (lootedRooms[roomID] + room.lootEveryXDays)):
+			return true
+		
+		return false
+	return true
+
+func markRoomAsLooted(roomID):
+	lootedRooms[roomID] = getDays()
+
+func isRoomLooted(roomID):
+	if(lootedRooms.has(roomID)):
+		return true
+	return false
+
+func consoleAnimationEditor():
+	playAnimation(StageScene.SoloEditable, "stand")
+
+func setIsTestingScene(newtest):
+	currentlyTestingScene = newtest
+
+func isTestingScene():
+	return currentlyTestingScene
+
+func _on_GameUI_onDevComButton():
+	if(GM.ui.isShowingDevCommentary()):
+		GM.ui.showGameScreen()
+		return
+	if(!OPTIONS.developerCommentaryEnabled()):
+		return
+	if(getCurrentScene() == null):
+		return
+	var devCommentary = getCurrentScene().getDevCommentary()
+	getCurrentScene().markShownDevCommentary()
+	if(devCommentary == null || devCommentary == ""):
+		return
+	GM.ui.showDevCommentary(devCommentary)

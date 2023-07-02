@@ -45,6 +45,11 @@ func getArousal()->float:
 
 func addPain(newpain):
 	getChar().addPain(newpain)
+	
+	if(newpain > 0):
+		var masochistScore = fetishScore({Fetish.Masochism: 1.0})
+		if(masochistScore > 0.0):
+			addLust(round(newpain * masochistScore * 0.5))
 
 func addLust(newlust):
 	getChar().addLust(newlust)
@@ -137,7 +142,7 @@ func getSexEndInfo():
 func hasTag(thetag):
 	return getSexEngine().hasTag(charID, thetag)
 
-func affectPersonality(_personality:Personality):
+func affectPersonality(_personality:Personality, _fetishHolder:FetishHolder):
 	return ""
 
 func saveData():

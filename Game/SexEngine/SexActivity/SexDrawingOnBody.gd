@@ -7,6 +7,13 @@ func getGoals():
 	return {
 	}
 
+func getSupportedSexTypes():
+	return {
+		SexType.DefaultSex: true,
+		SexType.StocksSex: true,
+		SexType.SlutwallSex: true,
+	}
+
 func getActivityBaseScore(_sexEngine: SexEngine, _domInfo: SexDomInfo, _subInfo: SexSubInfo):
 	return _domInfo.fetishScore({Fetish.Bodywritings: 0.05}) * (1.0 + _domInfo.personalityScore({PersonalityStat.Mean: 0.3}))
 
@@ -47,6 +54,9 @@ func processTurn():
 		affectSub(subInfo.fetishScore({Fetish.Bodywritings: 1.0}, -0.25), 0.01, -0.2, -0.02)
 		
 		var zone = BodyWritingsZone.getRandomZone()
+		if(getSexType() == SexType.SlutwallSex):
+			zone = BodyWritingsZone.getRandomZoneLowerPart()
+		
 		var writingID = BodyWritings.getRandomWritingIDForZone(zone)
 		getSub().addBodywriting(zone, writingID)
 		return {
@@ -70,6 +80,8 @@ func getSubResistChance():
 	if(getSub().hasBlockedHands()):
 		defaultChance *= 0.5
 	if(getSub().isBlindfolded()):
+		defaultChance *= 0.5
+	if(getSexType() in [SexType.SlutwallSex, SexType.StocksSex]):
 		defaultChance *= 0.5
 	return defaultChance
 

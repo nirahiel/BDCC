@@ -6,7 +6,7 @@ func _init():
 func _run():
 	if(state == ""):
 		addCharacter("nova")
-		GM.main.playAnimation(StageScene.Duo, "stand", {npc="nova", npcAction="stand"})
+		playAnimation(StageScene.Duo, "stand", {npc="nova", npcAction="stand"})
 		
 	if(state == ""):
 		GM.main.setModuleFlag("NovaModule", "Nova_SawPC", true)
@@ -67,6 +67,12 @@ func _run():
 		addButton("Attack", "Fight the husky", "attack")
 
 	if(state == "submittosearch"):
+		playAnimation(StageScene.SexStanding, "tease", {
+			pc="nova",npc="pc",
+			bodyState={},
+			npcBodyState={},
+		})
+		
 		saynn("You do as she says, walking up to the nearest wall and leaning forwards, waiting to be frisked.")
 
 		# (if girl)
@@ -370,3 +376,9 @@ func _react_scene_end(_tag, _result):
 		else:
 			setState("lost_fight")
 			addExperienceToPlayer(5)
+
+func getDevCommentary():
+	return "Probably one of the first.. encounter scenes.. that I wrote. Has one of the most earliest lewd scenes too in the game ^^. So if they suck - thats why x3. Before, the idea was to have every encounter type have many scenes like this one.. with a unique character and stuff.. But after writing one such scene I was like.. nope x3 we doing something simpler or we doin nothing!"
+
+func hasDevCommentary():
+	return true

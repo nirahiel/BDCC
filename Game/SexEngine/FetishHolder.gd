@@ -3,6 +3,8 @@ class_name FetishHolder
 
 var character: WeakRef
 var fetishMap: Dictionary = {}
+var maxInterest = 4
+var minInterest = -4
 
 func _init():
 	for fetishID in GlobalRegistry.getFetishes():
@@ -11,6 +13,8 @@ func _init():
 		#setFetish(fetishID, FetishInterest.Hates)
 		setFetish(fetishID, FetishInterest.Likes)
 	
+	maxInterest = FetishInterest.getMaxPossibleInterestNumber()
+	minInterest = FetishInterest.getMinPossibleInterestNumber()
 	#setFetish(Fetish.OralSexReceiving, FetishInterest.Loves)
 	#setFetish(Fetish.VaginalSexGiving, FetishInterest.Loves)
 	#setFetish(Fetish.DrugUse, FetishInterest.Loves)
@@ -33,6 +37,17 @@ func setCharacter(newchar):
 func setFetish(fetishID, interest):
 	fetishMap[fetishID] = interest
 
+# Increase or decrease fetish by 1 or more tiers, for example if we use "numTiers = 3" on the fetish that have 
+# "SlightlyDislikes" level it will become "Likes"
+func adjustFetishInterestByTier(fetishID, numTiers: int = 1) -> bool:
+	var currentInterestValueNum = FetishInterest.interestToNumber(getFetishInterest(fetishID))
+	var projectedInterestValueNum = int(clamp((currentInterestValueNum + numTiers), minInterest, maxInterest))
+	if(currentInterestValueNum != projectedInterestValueNum): #return true only if interest has changed
+		fetishMap[fetishID] = FetishInterest.numberToInterest(projectedInterestValueNum)
+		return true
+	else:
+		return false
+	
 func addFetish(fetishID, interest):
 	var currentInterest = getFetishInterest(fetishID)
 	var newvalue = FetishInterest.interestToNumber(currentInterest) + FetishInterest.interestToNumber(interest)
@@ -62,7 +77,7 @@ func getGoals(_sexEngine, _sub):
 		
 		if(fetishInterestValue >= 0.0):
 			var fetish:FetishBase = GlobalRegistry.getFetish(fetishID)
-			var goals = fetish.getGoals(_sexEngine, getCharacter(), _sub)
+			var goals = fetish.getGoals(_sexEngine, self, getCharacter(), _sub)
 			
 			for goal in goals:
 				result.append([goal, max(0.1, fetishInterestValue)])
@@ -89,3 +104,10 @@ func loadData(data):
 	var newfetishMap = SAVE.loadVar(data, "fetishMap", null)
 	if(newfetishMap != null && (newfetishMap is Dictionary)):
 		fetishMap = newfetishMap
+	
+	# Adds missing fetishes
+	var thechar = getCharacter()
+	if(thechar != null && !thechar.isDynamicCharacter()):
+		for fetishID in GlobalRegistry.getFetishes():
+			if(!fetishMap.has(fetishID)):
+				fetishMap[fetishID] = GlobalRegistry.getFetish(fetishID).getInitialInterest(thechar)

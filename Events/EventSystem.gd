@@ -2,6 +2,7 @@ extends Node
 class_name EventSystem
 
 var eventTriggers = {}
+var eventChecks = {}
 
 func _ready():
 	GM.ES = self
@@ -12,9 +13,11 @@ func _ready():
 	registerEventTrigger(Trigger.TalkingToNPC, EventTriggerLocation.new())
 	registerEventTrigger(Trigger.CaughtStealingInGreenhouse, EventTriggerWeighted.new())
 	registerEventTrigger(Trigger.CaughtOffLimits, EventTriggerWeighted.new())
+	registerEventTrigger(Trigger.HighExposureInmateEvent, EventTriggerWeighted.new())
 	registerEventTrigger(Trigger.PCLookingForTrouble, EventTriggerWeighted.new())
 	registerEventTrigger(Trigger.MasturbationSpottedGuard, EventTriggerWeighted.new())
 	registerEventTrigger(Trigger.MasturbationSpottedInmate, EventTriggerWeighted.new())
+	registerEventTrigger(Trigger.SleepInCell, EventTriggerWeighted.new())
 	registerEventTrigger(Trigger.SceneAndStateHook, EventTriggerSceneHook.new())
 	
 	var modules = GlobalRegistry.getModules()
@@ -62,6 +65,22 @@ func checkButtonInput(method, args):
 		args[0].onButton(args[1], args[2])
 		return true
 	return false
+
+func addEventCheck(event, checkID):
+	if(!eventChecks.has(checkID)):
+		eventChecks[checkID] = []
+	
+	eventChecks[checkID].append(event)
+
+func eventCheck(checkID, args = []):
+	if(!eventChecks.has(checkID)):
+		return null
+	
+	for theEventCheck in eventChecks[checkID]:
+		var eventCheckData = theEventCheck.eventCheck(checkID, args)
+		if(eventCheckData != null):
+			return eventCheckData
+	return null
 
 func saveData():
 	var data = {}

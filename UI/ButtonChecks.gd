@@ -8,6 +8,7 @@ enum {
 	NotHandsBlocked,
 	NotArmsRestrained,
 	NotLegsRestrained,
+	NotBlindfolded,
 	SkillCheck,
 	StatCheck,
 	PerkCheck,
@@ -15,12 +16,16 @@ enum {
 	HasReachablePenis,
 	HasReachableVagina,
 	HasReachableAnus,
+	HasReachableVaginaOrAnus,
 	HasPenis,
 	HasVagina,
 	NotStunned,
 	HasStamina,
 	HasCredits,
 	ContentEnabled,
+	CanWearStrapon,
+	HasStraponAndCanWear,
+	IsWearingChastityCage,
 }
 
 static func getReasonText(reason):
@@ -37,6 +42,8 @@ static func getReasonText(reason):
 		return "You can't do this while your arms are restrained"
 	if(reason == NotLegsRestrained):
 		return "You can't do this while your legs are restrained"
+	if(reason == NotBlindfolded):
+		return "You can't do this while blindfolded"
 	if(reason == HasCondoms):
 		return "You don't have any condoms"
 	if(reason == HasReachablePenis):
@@ -45,6 +52,8 @@ static func getReasonText(reason):
 		return "You need to have a reachable pussy"
 	if(reason == HasReachableAnus):
 		return "You need to have a reachable anus"
+	if(reason == HasReachableVaginaOrAnus):
+		return "You need to have a reachable pussy or anus"
 	if(reason == HasPenis):
 		return "You need to have a dick"
 	if(reason == HasVagina):
@@ -63,6 +72,12 @@ static func getReasonText(reason):
 		return "You need more credits!"
 	if(reason == ContentEnabled):
 		return ""
+	if(reason == CanWearStrapon):
+		return "You can't wear strapons"
+	if(reason == HasStraponAndCanWear):
+		return "You don't have any strapons or can't put on one"
+	if(reason == IsWearingChastityCage):
+		return "You're not wearing a chastity cage"
 	return "Error?"
 
 static func check(checks: Array):
@@ -89,6 +104,9 @@ static func check(checks: Array):
 		if(reason == NotLegsRestrained):
 			if(GM.pc.hasBoundLegs()):
 				return reason
+		if(reason == NotBlindfolded):
+			if(GM.pc.isBlindfolded()):
+				return reason
 		if(reason == SkillCheck):
 			var skill: SkillBase = GM.pc.getSkillsHolder().getSkill(args[1])
 			if(skill == null || skill.getLevel() < args[2]):
@@ -111,6 +129,9 @@ static func check(checks: Array):
 		if(reason == HasReachableAnus):
 			if(!GM.pc.hasReachableAnus()):
 				return reason
+		if(reason == HasReachableVaginaOrAnus):
+			if(!GM.pc.hasReachableAnus() && !GM.pc.hasReachableVagina()):
+				return reason
 		if(reason == HasPenis):
 			if(!GM.pc.hasPenis()):
 				return reason
@@ -129,6 +150,18 @@ static func check(checks: Array):
 		if(reason == ContentEnabled):
 			if(!OPTIONS.isContentEnabled(args[1])):
 				return args
+		if(reason == CanWearStrapon):
+			if(!GM.pc.canWearStrapon()):
+				return args
+		if(reason == HasStraponAndCanWear):
+			if(!GM.pc.canWearStrapon()):
+				return args
+			if(!GM.pc.hasStrapons()):
+				return args
+		if(reason == IsWearingChastityCage):
+			if(!GM.pc.isWearingChastityCage()):
+				return args
+			
 	return null
 
 static func getPrefix(checks: Array):
